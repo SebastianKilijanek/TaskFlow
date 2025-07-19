@@ -10,6 +10,7 @@ namespace TaskFlow.Domain.Entities
         public string PasswordHash { get; set; }
         public ICollection<UserBoard> UserBoards { get; set; }
         public ICollection<TaskItem> AssignedTasks { get; set; }
+        public ICollection<Comment> Comments { get; set; }
         public UserRole Role { get; set; }
     }
 }

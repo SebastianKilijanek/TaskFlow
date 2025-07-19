@@ -13,5 +13,6 @@ namespace TaskFlow.Domain.Entities
         public TaskStatus Status { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? DueDate { get; set; }
+        public int Position { get; set; }
     }
 }
