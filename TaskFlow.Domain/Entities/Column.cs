@@ -8,5 +8,6 @@ namespace TaskFlow.Domain.Entities
         public Guid BoardId { get; set; }
         public Board Board { get; set; }
         public ICollection<TaskItem> Tasks { get; set; }
+        public int Position { get; set; }
     }
 }
