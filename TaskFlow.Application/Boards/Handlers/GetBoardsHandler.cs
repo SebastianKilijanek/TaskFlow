@@ -11,12 +11,7 @@ namespace TaskFlow.Application.Boards.Handlers
         public async Task<IEnumerable<BoardDTO>> Handle(GetBoardsQuery request, CancellationToken cancellationToken)
         {
             var boards = await unitOfWork.Repository<Board>().ListAsync();
-            return boards.Select(board => new BoardDTO
-            {
-                Id = board.Id,
-                Name = board.Name,
-                IsPublic = board.IsPublic
-            });
+            return boards.Select(board => new BoardDTO(board.Id, board.Name, board.IsPublic));
         }
     }
 }

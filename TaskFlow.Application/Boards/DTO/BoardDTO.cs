@@ -1,9 +1,9 @@
 namespace TaskFlow.Application.Boards.DTO
 {
-    public class BoardDTO
+    public class BoardDTO(Guid boardId, string boardName, bool boardIsPublic)
     {
-        public Guid Id { get; set; }
-        public string Name { get; set; }
-        public bool IsPublic { get; set; }
+        public Guid Id { get; set; } = boardId;
+        public string Name { get; set; } = boardName;
+        public bool IsPublic { get; set; } = boardIsPublic;
     }
 }
