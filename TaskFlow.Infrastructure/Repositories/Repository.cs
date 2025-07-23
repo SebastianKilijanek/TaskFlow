@@ -8,7 +8,7 @@ namespace TaskFlow.Infrastructure.Repositories
         protected readonly DbContext _context = context;
         protected readonly DbSet<T> _dbSet = context.Set<T>();
 
-        public virtual async Task<T> GetByIdAsync(Guid id)
+        public virtual async Task<T?> GetByIdAsync(Guid id)
         {
             return await _dbSet.FindAsync(id);
         }
