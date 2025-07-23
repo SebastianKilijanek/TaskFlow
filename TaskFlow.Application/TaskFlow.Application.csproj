@@ -10,4 +10,15 @@
       <ProjectReference Include="..\TaskFlow.Domain\TaskFlow.Domain.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="AutoMapper" Version="15.0.1" />
+      <PackageReference Include="MediatR" Version="13.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Common\DTO\" />
+      <Folder Include="Common\Mapping\" />
+      <Folder Include="Interfaces\" />
+    </ItemGroup>
+
 </Project>
