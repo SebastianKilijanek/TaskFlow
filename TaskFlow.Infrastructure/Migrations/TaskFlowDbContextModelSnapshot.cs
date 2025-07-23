@@ -56,6 +56,9 @@ namespace TaskFlow.Infrastructure.Migrations
                     b.Property<int>("Order")
                         .HasColumnType("integer");
 
+                    b.Property<int>("Position")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("BoardId");
@@ -110,11 +113,13 @@ namespace TaskFlow.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
@@ -176,7 +181,7 @@ namespace TaskFlow.Infrastructure.Migrations
 
                     b.HasIndex("BoardId");
 
-                    b.ToTable("UserBoard");
+                    b.ToTable("UserBoards");
                 });
 
             modelBuilder.Entity("TaskFlow.Domain.Entities.Column", b =>
@@ -193,7 +198,7 @@ namespace TaskFlow.Infrastructure.Migrations
             modelBuilder.Entity("TaskFlow.Domain.Entities.Comment", b =>
                 {
                     b.HasOne("TaskFlow.Domain.Entities.User", "Author")
-                        .WithMany()
+                        .WithMany("Comments")
                         .HasForeignKey("AuthorId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -265,6 +270,8 @@ namespace TaskFlow.Infrastructure.Migrations
             modelBuilder.Entity("TaskFlow.Domain.Entities.User", b =>
                 {
                     b.Navigation("AssignedTasks");
+
+                    b.Navigation("Comments");
 
                     b.Navigation("UserBoards");
                 });
