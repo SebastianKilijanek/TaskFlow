@@ -11,14 +11,25 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="AutoMapper" Version="15.0.1" />
+      <PackageReference Include="AutoMapper" Version="12.0.1" />
       <PackageReference Include="MediatR" Version="13.0.0" />
     </ItemGroup>
 
     <ItemGroup>
+      <Folder Include="Columns\Commands\" />
+      <Folder Include="Columns\Handlers\" />
+      <Folder Include="Columns\Queries\" />
+      <Folder Include="Comments\Commands\" />
+      <Folder Include="Comments\Handlers\" />
+      <Folder Include="Comments\Queries\" />
       <Folder Include="Common\DTO\" />
-      <Folder Include="Common\Mapping\" />
       <Folder Include="Interfaces\" />
+      <Folder Include="TaskItems\Commands\" />
+      <Folder Include="TaskItems\Handlers\" />
+      <Folder Include="TaskItems\Queries\" />
+      <Folder Include="Users\Commands\" />
+      <Folder Include="Users\Handlers\" />
+      <Folder Include="Users\Queries\" />
     </ItemGroup>
 
 </Project>

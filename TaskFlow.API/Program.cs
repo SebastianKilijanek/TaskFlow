@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using TaskFlow.Application.Common.Mapping;
 using TaskFlow.Domain.Interfaces;
 using TaskFlow.Infrastructure.Data;
 using TaskFlow.Infrastructure.Repositories;
@@ -13,6 +14,7 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(TaskFlow.Application.AssemblyReference).Assembly));
 
+builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 builder.Services.AddControllers();
 
