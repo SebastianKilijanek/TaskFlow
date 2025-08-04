@@ -17,6 +17,11 @@
       environment:
         - ASPNETCORE_ENVIRONMENT=Development
         - ConnectionStrings__Default=Host=db;Database=taskflow;Username=taskflow;Password=devpass
+        - Jwt__Secret=1dfec66f3d9ca16bdba7396ad76a97e07c48e6bb993bf8511b8ec8d9b272eed9e5ccaea636d81bd46316c0aaced1d9593d6cea0634d3c1916666018bd0f6c0f7
+        - Jwt__Issuer=TaskFlow
+        - Jwt__Audience=TaskFlowUsers
+        - Jwt__ExpiryMinutes=60
+        - Jwt__RefreshExpiryMinutes=4320
       depends_on:
         - db
   volumes:

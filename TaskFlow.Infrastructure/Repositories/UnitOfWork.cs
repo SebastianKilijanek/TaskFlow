@@ -6,7 +6,9 @@ namespace TaskFlow.Infrastructure.Repositories
     public class UnitOfWork(TaskFlowDbContext context) : IUnitOfWork, IDisposable
     {
         private readonly Dictionary<Type, object> _repositories = new();
-
+       
+        public IUserRepository UserRepository { get; } = new UserRepository(context);
+        
         public IRepository<T> Repository<T>() where T : class
         {
             if (_repositories.TryGetValue(typeof(T), out var repo))
