@@ -1,5 +1,4 @@
 using AutoMapper;
-using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using TaskFlow.Application.Boards.Commands;
 using TaskFlow.Application.Boards.Handlers;
@@ -8,18 +7,10 @@ using TaskFlow.Domain.Interfaces;
 using Xunit;
 using TaskFlow.Domain.Entities;
 
-namespace TaskFlow.Tests.Application.Boards;
+namespace TaskFlow.Tests.Unit.Application.Boards;
 
-public class BoardCrudTests : IClassFixture<TestWebApplicationFactory<TaskFlow.API.AssemblyReference>>
+public class BoardsHandlersTests()
 {
-    private readonly IMapper _mapper;
-        
-    public BoardCrudTests(TestWebApplicationFactory<TaskFlow.API.AssemblyReference> factory)
-    {
-        using var scope = factory.Services.CreateScope();
-        _mapper = scope.ServiceProvider.GetRequiredService<IMapper>();
-    }
-        
     [Fact]
     public async Task CreateBoard_ShouldReturnBoardId()
     {
@@ -48,11 +39,12 @@ public class BoardCrudTests : IClassFixture<TestWebApplicationFactory<TaskFlow.A
         };
 
         var repoMock = new Mock<IRepository<Board>>();
-        repoMock.Setup(r => r.ListAsync()).ReturnsAsync(boards);
+        repoMock.Setup(r => r.ListAsync(It.IsAny<Predicate<Board>>())).ReturnsAsync(boards);
         var uowMock = new Mock<IUnitOfWork>();
         uowMock.Setup(u => u.Repository<Board>()).Returns(repoMock.Object);
-
-        var handler = new GetBoardsHandler(uowMock.Object, _mapper);
+        var mapperMock = new Mock<IMapper>();
+        
+        var handler = new GetBoardsHandler(uowMock.Object, mapperMock.Object);
 
         var result = await handler.Handle(new GetBoardsQuery(), default);
 
