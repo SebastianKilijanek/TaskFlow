@@ -13,11 +13,12 @@ namespace TaskFlow.Infrastructure.Repositories
             return await _dbSet.FindAsync(id);
         }
 
-        public virtual async Task<IReadOnlyList<T>> ListAsync()
+        public virtual async Task<IReadOnlyList<T>> ListAsync(Predicate<T>? predicate = null)
         {
-            return await _dbSet.ToListAsync();
+            var list = await _dbSet.ToListAsync();
+            return predicate != null ? list.Where(e => predicate(e)).ToList() : list;
         }
-
+        
         public virtual async Task AddAsync(T entity)
         {
             await _dbSet.AddAsync(entity);
