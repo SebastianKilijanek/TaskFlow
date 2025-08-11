@@ -7,7 +7,7 @@ namespace TaskFlow.Infrastructure.Data
     {
         public DbSet<Board> Boards { get; set; }
         public DbSet<Column> Columns { get; set; }
-        public DbSet<TaskItem> Tasks { get; set; }
+        public DbSet<TaskItem> TaskItems { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<UserBoard> UserBoards { get; set; }
         public DbSet<Comment> Comments { get; set; }
