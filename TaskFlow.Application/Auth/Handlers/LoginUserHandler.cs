@@ -7,10 +7,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace TaskFlow.Application.Auth.Handlers;
 
-public class LoginUserHandler(
-    IUnitOfWork unitOfWork,
-    IJwtService jwtService,
-    IPasswordHasher<User> passwordHasher)
+public class LoginUserHandler(IUnitOfWork unitOfWork, IJwtService jwtService, IPasswordHasher<User> passwordHasher)
     : IRequestHandler<LoginUserCommand, AuthResultDTO?>
 {
     public async Task<AuthResultDTO?> Handle(LoginUserCommand request, CancellationToken cancellationToken)

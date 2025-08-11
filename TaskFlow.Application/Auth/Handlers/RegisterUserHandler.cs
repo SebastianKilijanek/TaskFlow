@@ -8,10 +8,7 @@ using TaskFlow.Domain.Enums;
 
 namespace TaskFlow.Application.Auth.Handlers;
 
-public class RegisterUserHandler(
-    IUnitOfWork unitOfWork,
-    IJwtService jwtService,
-    IPasswordHasher<User> passwordHasher)
+public class RegisterUserHandler(IUnitOfWork unitOfWork, IJwtService jwtService, IPasswordHasher<User> passwordHasher)
     : IRequestHandler<RegisterUserCommand, AuthResultDTO>
 {
     public async Task<AuthResultDTO> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
@@ -21,8 +18,10 @@ public class RegisterUserHandler(
             Id = Guid.NewGuid(),
             Email = request.Email,
             UserName = request.UserName,
+            PasswordHash = String.Empty,
             Role = UserRole.User
         };
+        
         user.PasswordHash = passwordHasher.HashPassword(user, request.Password);
         await unitOfWork.Repository<User>().AddAsync(user);
         await unitOfWork.SaveChangesAsync();
