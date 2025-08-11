@@ -4,14 +4,14 @@ public class BoardDTO
 {
     public BoardDTO() { }
 
-    public BoardDTO(Guid boardId, string boardName, bool boardIsPublic)
+    public BoardDTO(Guid id, string name, bool isPublic)
     {
-        Id = boardId;
-        Name = boardName;
-        IsPublic = boardIsPublic;
+        Id = id;
+        Name = name;
+        IsPublic = isPublic;
     }
 
-    public required  Guid Id { get; set; }
+    public required Guid Id { get; set; }
     public required string Name { get; set; }
     public bool IsPublic { get; set; }
 }
