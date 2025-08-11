@@ -1,10 +1,10 @@
-namespace TaskFlow.Domain.Entities;
+namespace TaskFlow.Application.Columns.DTO;
 
-public class Column
+public class ColumnDTO
 {
-    public Column() { }
+    public ColumnDTO() { }
 
-    public Column(Guid id, string name, int position, Guid boardId)
+    public ColumnDTO(Guid id, string name, int position, Guid boardId)
     {
         Id = id;
         Name = name;
@@ -16,6 +16,4 @@ public class Column
     public required string Name { get; set; }
     public int Position { get; set; }
     public required Guid BoardId { get; set; }
-    public Board Board { get; set; } = null!;
-    public ICollection<TaskItem> Tasks { get; set; } = new List<TaskItem>();
 }
