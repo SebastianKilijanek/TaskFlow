@@ -21,8 +21,8 @@ namespace TaskFlow.Domain.Entities
         public required string PasswordHash { get; set; }
         public UserRole Role { get; set; }
 
-        public ICollection<UserBoard> UserBoards { get; set; } = new List<UserBoard>();
-        public ICollection<TaskItem> AssignedTasks { get; set; } = new List<TaskItem>();
-        public ICollection<Comment> Comments { get; set; } = new List<Comment>();
+        public virtual ICollection<UserBoard> UserBoards { get; set; } = new List<UserBoard>();
+        public virtual ICollection<TaskItem> AssignedTasks { get; set; } = new List<TaskItem>();
+        public virtual ICollection<Comment> Comments { get; set; } = new List<Comment>();
     }
 }

@@ -16,6 +16,6 @@ public class Column
     public required string Name { get; set; }
     public int Position { get; set; }
     public required Guid BoardId { get; set; }
-    public Board Board { get; set; } = null!;
-    public ICollection<TaskItem> Tasks { get; set; } = new List<TaskItem>();
+    public virtual Board Board { get; set; } = null!;
+    public virtual ICollection<TaskItem> Tasks { get; set; } = new List<TaskItem>();
 }
