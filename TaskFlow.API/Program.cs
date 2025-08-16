@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using TaskFlow.API.Middleware;
+using TaskFlow.Application.Common.Interfaces;
 using TaskFlow.Application.Common.Mapping;
 using TaskFlow.Application.Configuration;
 using TaskFlow.Domain.Entities;
@@ -13,6 +14,8 @@ using TaskFlow.Domain.Interfaces;
 using TaskFlow.Infrastructure.Auth;
 using TaskFlow.Infrastructure.Data;
 using TaskFlow.Infrastructure.Repositories;
+using TaskFlow.Infrastructure.Services;
+
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
     .WriteTo.File("Logs/log.txt", rollingInterval: RollingInterval.Day)
@@ -55,6 +58,9 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(TaskFlow.Application.AssemblyReference).Assembly));
 
 builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>(), typeof(TaskFlow.Application.AssemblyReference).Assembly);
+
+builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("EmailOptions"));
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddControllers();
 
