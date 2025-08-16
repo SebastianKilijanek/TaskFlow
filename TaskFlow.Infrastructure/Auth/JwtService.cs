@@ -4,8 +4,8 @@ using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using TaskFlow.Application.Configuration;
+using TaskFlow.Application.Common.Interfaces;
 using TaskFlow.Domain.Entities;
-using TaskFlow.Domain.Interfaces;
 
 namespace TaskFlow.Infrastructure.Auth;
 

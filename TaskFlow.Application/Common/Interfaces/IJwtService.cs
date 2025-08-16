@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using TaskFlow.Domain.Entities;
 
-namespace TaskFlow.Domain.Interfaces;
+namespace TaskFlow.Application.Common.Interfaces;
 
 public interface IJwtService
 {
