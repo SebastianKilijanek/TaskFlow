@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Serilog;
 using TaskFlow.Application.Common.Mapping;
 using TaskFlow.Application.Configuration;
 using TaskFlow.Domain.Entities;
@@ -11,8 +12,15 @@ using TaskFlow.Domain.Interfaces;
 using TaskFlow.Infrastructure.Auth;
 using TaskFlow.Infrastructure.Data;
 using TaskFlow.Infrastructure.Repositories;
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .WriteTo.File("Logs/log.txt", rollingInterval: RollingInterval.Day)
+    .Enrich.FromLogContext()
+    .CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog();
 
 builder.Services.AddDbContext<TaskFlowDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default"))
