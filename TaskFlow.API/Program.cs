@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using TaskFlow.API.Middleware;
 using TaskFlow.Application.Common.Mapping;
 using TaskFlow.Application.Configuration;
 using TaskFlow.Domain.Entities;
@@ -95,6 +96,8 @@ if (app.Environment.IsDevelopment())
 }
 
 // app.UseHttpsRedirection();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();
