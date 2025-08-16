@@ -15,6 +15,6 @@ public class Board
     public required string Name { get; set; }
     public bool IsPublic { get; set; }
 
-    public ICollection<Column> Columns { get; set; } = new List<Column>();
-    public ICollection<UserBoard> UserBoards { get; set; } = new List<UserBoard>();
+    public virtual ICollection<Column> Columns { get; set; } = new List<Column>();
+    public virtual ICollection<UserBoard> UserBoards { get; set; } = new List<UserBoard>();
 }

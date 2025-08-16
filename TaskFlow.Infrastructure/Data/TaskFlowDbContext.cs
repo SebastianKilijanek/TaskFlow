@@ -5,12 +5,17 @@ namespace TaskFlow.Infrastructure.Data
 {
     public class TaskFlowDbContext(DbContextOptions<TaskFlowDbContext> options) : DbContext(options)
     {
+        public DbSet<User> Users { get; set; }
+        public DbSet<UserBoard> UserBoards { get; set; }
         public DbSet<Board> Boards { get; set; }
         public DbSet<Column> Columns { get; set; }
         public DbSet<TaskItem> TaskItems { get; set; }
-        public DbSet<User> Users { get; set; }
-        public DbSet<UserBoard> UserBoards { get; set; }
         public DbSet<Comment> Comments { get; set; }
+        
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder.UseLazyLoadingProxies();
+        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -23,6 +28,23 @@ namespace TaskFlow.Infrastructure.Data
                 .HasForeignKey(c => c.BoardId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // UserBoard - composite key
+            modelBuilder.Entity<UserBoard>().HasKey(ub => new { ub.UserId, ub.BoardId });
+            
+            // UserBoard - User (N:1)
+            modelBuilder.Entity<UserBoard>()
+                .HasOne(ub => ub.User)
+                .WithMany(u => u.UserBoards)
+                .HasForeignKey(ub => ub.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // UserBoard - Board (N:1)
+            modelBuilder.Entity<UserBoard>()
+                .HasOne(ub => ub.Board)
+                .WithMany(b => b.UserBoards)
+                .HasForeignKey(ub => ub.BoardId)
+                .OnDelete(DeleteBehavior.Cascade);
+            
             // Column - Tasks (1:N)
             modelBuilder.Entity<Column>()
                 .HasMany(c => c.Tasks)
@@ -49,23 +71,6 @@ namespace TaskFlow.Infrastructure.Data
                 .HasOne(c => c.Author)
                 .WithMany(u => u.Comments)
                 .HasForeignKey(c => c.AuthorId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // UserBoard - composite key
-            modelBuilder.Entity<UserBoard>().HasKey(ub => new { ub.UserId, ub.BoardId });
-
-            // UserBoard - User (N:1)
-            modelBuilder.Entity<UserBoard>()
-                .HasOne(ub => ub.User)
-                .WithMany(u => u.UserBoards)
-                .HasForeignKey(ub => ub.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // UserBoard - Board (N:1)
-            modelBuilder.Entity<UserBoard>()
-                .HasOne(ub => ub.Board)
-                .WithMany(b => b.UserBoards)
-                .HasForeignKey(ub => ub.BoardId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

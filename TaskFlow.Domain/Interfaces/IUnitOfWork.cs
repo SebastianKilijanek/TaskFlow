@@ -1,9 +1,8 @@
-namespace TaskFlow.Domain.Interfaces
+namespace TaskFlow.Domain.Interfaces;
+
+public interface IUnitOfWork
 {
-    public interface IUnitOfWork
-    {
-        IUserRepository UserRepository { get; }
-        IRepository<T> Repository<T>() where T : class;
-        Task<int> SaveChangesAsync();
-    }
+    IUserRepository UserRepository { get; }
+    IRepository<T> Repository<T>() where T : class;
+    Task<int> SaveChangesAsync();
 }
