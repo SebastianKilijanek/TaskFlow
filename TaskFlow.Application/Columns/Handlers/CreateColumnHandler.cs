@@ -9,17 +9,22 @@ public class CreateColumnHandler(IUnitOfWork unitOfWork) : IRequestHandler<Creat
 {
     public async Task<Guid> Handle(CreateColumnCommand request, CancellationToken cancellationToken)
     {
+        var columnsOnBoard = await unitOfWork.Repository<Column>()
+            .ListAsync(c => c.BoardId == request.BoardId);
+
+        var newPosition = columnsOnBoard.Any() ? columnsOnBoard.Max(c => c.Position) + 1 : 0;
+
         var column = new Column
         {
             Id = Guid.NewGuid(),
             Name = request.Name,
             BoardId = request.BoardId,
-            Position = request.Position
+            Position = newPosition
         };
-        
+
         await unitOfWork.Repository<Column>().AddAsync(column);
         await unitOfWork.SaveChangesAsync();
-        
+
         return column.Id;
     }
 }

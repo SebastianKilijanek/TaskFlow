@@ -14,6 +14,9 @@ public class GetColumnsByBoardHandler(IUnitOfWork unitOfWork, IMapper mapper)
     {
         var columns = await unitOfWork.Repository<Column>().ListAsync(c => c.BoardId == request.BoardId);
         
-        return columns.Select(mapper.Map<ColumnDTO>).ToList();
+        return columns
+            .OrderBy(c => c.Position)
+            .Select(mapper.Map<ColumnDTO>)
+            .ToList();
     }
 }

@@ -9,15 +9,11 @@ public class UpdateColumnHandler(IUnitOfWork unitOfWork) : IRequestHandler<Updat
 {
     public async Task<Unit> Handle(UpdateColumnCommand request, CancellationToken cancellationToken)
     {
-        var column = await unitOfWork.Repository<Column>().GetByIdAsync(request.Id);
-        if (column == null) throw new Exception("Column not found");
-
-        column.Name = request.Name;
-        column.Position = request.Position;
-
-        unitOfWork.Repository<Column>().Update(column);
+        request.Column.Name = request.Name;
+            
+        unitOfWork.Repository<Column>().Update(request.Column);
         await unitOfWork.SaveChangesAsync();
-        
+
         return Unit.Value;
     }
 }
