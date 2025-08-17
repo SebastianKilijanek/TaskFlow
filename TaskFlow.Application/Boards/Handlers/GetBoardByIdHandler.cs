@@ -2,16 +2,17 @@ using AutoMapper;
 using MediatR;
 using TaskFlow.Application.Boards.Queries;
 using TaskFlow.Application.Boards.DTO;
+using TaskFlow.Application.Common.Exceptions;
 using TaskFlow.Domain.Entities;
 using TaskFlow.Domain.Interfaces;
 
 namespace TaskFlow.Application.Boards.Handlers;
 
-public class GetBoardByIdHandler(IUnitOfWork unitOfWork, IMapper mapper) : IRequestHandler<GetBoardByIdQuery, BoardDTO?>
+public class GetBoardByIdHandler(IUnitOfWork unitOfWork, IMapper mapper) : IRequestHandler<GetBoardByIdQuery, BoardDTO>
 {
-    public async Task<BoardDTO?> Handle(GetBoardByIdQuery request, CancellationToken cancellationToken)
+    public async Task<BoardDTO> Handle(GetBoardByIdQuery request, CancellationToken cancellationToken)
     {
         var board = await unitOfWork.Repository<Board>().GetByIdAsync(request.Id);
-        return board is null ? null : mapper.Map<BoardDTO>(board);
+        return mapper.Map<BoardDTO>(board);
     }
 }
