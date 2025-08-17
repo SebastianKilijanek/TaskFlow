@@ -7,7 +7,7 @@ using TaskFlow.Domain.Interfaces;
 
 namespace TaskFlow.Application.Columns.Commands;
 
-public record DeleteColumnCommand(Guid UserId, Guid Id) : IRequest<Unit>, IBoardAuthorizableRequest
+public record DeleteColumnCommand(Guid UserId, Guid Id) : IRequest<Unit>, IUserBoardAuthorizableRequest
 {
     public Column? Column;
     

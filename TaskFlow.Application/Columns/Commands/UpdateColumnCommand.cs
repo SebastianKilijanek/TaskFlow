@@ -7,7 +7,7 @@ using TaskFlow.Domain.Interfaces;
 
 namespace TaskFlow.Application.Columns.Commands;
 
-public record UpdateColumnCommand(Guid UserId, Guid Id, string Name) : IRequest<Unit>, IBoardAuthorizableRequest
+public record UpdateColumnCommand(Guid UserId, Guid Id, string Name) : IRequest<Unit>, IUserBoardAuthorizableRequest
 {
     public Column? Column;
         

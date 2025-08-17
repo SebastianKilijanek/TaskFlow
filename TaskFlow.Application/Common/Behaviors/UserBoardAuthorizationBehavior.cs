@@ -6,11 +6,15 @@ using TaskFlow.Domain.Interfaces;
 
 namespace TaskFlow.Application.Common.Behaviors;
 
-public class BoardAuthorizationBehavior<TRequest, TResponse>(IUnitOfWork unitOfWork)
-    : IPipelineBehavior<TRequest, TResponse> where TRequest : IBoardAuthorizableRequest
+public class UserBoardAuthorizationBehavior<TRequest, TResponse>(IUnitOfWork unitOfWork)
+    : IPipelineBehavior<TRequest, TResponse> where TRequest : IUserBoardAuthorizableRequest
 {
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
+        var user = await unitOfWork.UserRepository.GetByIdAsync(request.UserId);
+        if (user is null)
+            throw new NotFoundException($"User with ID {request.UserId} not found.");
+        
         var (boardId, requiredRoles) = await request.GetAuthorizationDataAsync(unitOfWork);
 
         var board = await unitOfWork.Repository<Board>().GetByIdAsync(boardId);

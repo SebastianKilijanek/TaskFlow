@@ -6,7 +6,7 @@ using TaskFlow.Domain.Interfaces;
 
 namespace TaskFlow.Application.Boards.Queries;
 
-public record GetBoardByIdQuery(Guid UserId, Guid Id) : IRequest<BoardDTO>, IBoardAuthorizableRequest
+public record GetBoardByIdQuery(Guid UserId, Guid Id) : IRequest<BoardDTO>, IUserBoardAuthorizableRequest
 {
     public Task<(Guid BoardId, IEnumerable<BoardRole> RequiredRoles)> GetAuthorizationDataAsync(IUnitOfWork unitOfWork)
     {

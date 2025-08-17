@@ -7,7 +7,7 @@ using TaskFlow.Domain.Interfaces;
 
 namespace TaskFlow.Application.Columns.Commands;
 
-public record MoveColumnCommand(Guid UserId, Guid Id,int NewPosition) : IRequest<Unit>, IBoardAuthorizableRequest
+public record MoveColumnCommand(Guid UserId, Guid Id,int NewPosition) : IRequest<Unit>, IUserBoardAuthorizableRequest
 {
     public Column? Column;
         

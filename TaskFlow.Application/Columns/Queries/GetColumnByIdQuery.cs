@@ -8,7 +8,7 @@ using TaskFlow.Domain.Interfaces;
 
 namespace TaskFlow.Application.Columns.Queries;
 
-public record GetColumnByIdQuery(Guid UserId, Guid Id) : IRequest<ColumnDTO?>, IBoardAuthorizableRequest
+public record GetColumnByIdQuery(Guid UserId, Guid Id) : IRequest<ColumnDTO?>, IUserBoardAuthorizableRequest
 {
     public Column? Column;
         
