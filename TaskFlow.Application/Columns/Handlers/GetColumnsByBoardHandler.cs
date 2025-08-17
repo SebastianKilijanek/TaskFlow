@@ -8,9 +8,9 @@ using TaskFlow.Domain.Interfaces;
 namespace TaskFlow.Application.Columns.Handlers;
 
 public class GetColumnsByBoardHandler(IUnitOfWork unitOfWork, IMapper mapper)
-    : IRequestHandler<GetColumnsByBoardQuery, List<ColumnDTO>>
+    : IRequestHandler<GetColumnsByBoardQuery, IReadOnlyList<ColumnDTO>>
 {
-    public async Task<List<ColumnDTO>> Handle(GetColumnsByBoardQuery request, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<ColumnDTO>> Handle(GetColumnsByBoardQuery request, CancellationToken cancellationToken)
     {
         var columns = await unitOfWork.Repository<Column>().ListAsync(c => c.BoardId == request.BoardId);
         
