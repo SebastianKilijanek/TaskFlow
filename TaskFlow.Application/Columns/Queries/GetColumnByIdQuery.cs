@@ -20,6 +20,6 @@ public record GetColumnByIdQuery(Guid UserId, Guid Id) : IRequest<ColumnDTO?>, I
             throw new NotFoundException($"Column with ID {Id} not found.");
         }
 
-        return await Task.FromResult((Column.BoardId, (IEnumerable<BoardRole>)[BoardRole.Owner, BoardRole.Member, BoardRole.Viewer]));
+        return await Task.FromResult((Column.BoardId, (IEnumerable<BoardRole>)[BoardRole.Owner, BoardRole.Editor, BoardRole.Viewer]));
     }
 }

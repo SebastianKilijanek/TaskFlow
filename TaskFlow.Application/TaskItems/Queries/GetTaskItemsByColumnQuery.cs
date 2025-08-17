@@ -19,6 +19,6 @@ public record GetTaskItemsByColumnQuery(Guid UserId, Guid ColumnId)
             throw new NotFoundException($"Column with ID {ColumnId} not found.");
         }
         
-        return await Task.FromResult((column.BoardId, (IEnumerable<BoardRole>)[BoardRole.Owner, BoardRole.Member, BoardRole.Viewer]));
+        return await Task.FromResult((column.BoardId, (IEnumerable<BoardRole>)[BoardRole.Owner, BoardRole.Editor, BoardRole.Viewer]));
     }
 }

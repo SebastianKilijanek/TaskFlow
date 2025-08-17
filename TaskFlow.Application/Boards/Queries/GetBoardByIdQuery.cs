@@ -10,6 +10,6 @@ public record GetBoardByIdQuery(Guid UserId, Guid Id) : IRequest<BoardDTO>, IUse
 {
     public Task<(Guid BoardId, IEnumerable<BoardRole> RequiredRoles)> GetAuthorizationDataAsync(IUnitOfWork unitOfWork)
     {
-        return Task.FromResult((Id, (IEnumerable<BoardRole>)[BoardRole.Owner, BoardRole.Member, BoardRole.Viewer]));
+        return Task.FromResult((Id, (IEnumerable<BoardRole>)[BoardRole.Owner, BoardRole.Editor, BoardRole.Viewer]));
     }
 }

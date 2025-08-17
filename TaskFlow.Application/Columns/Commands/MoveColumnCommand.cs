@@ -19,6 +19,6 @@ public record MoveColumnCommand(Guid UserId, Guid Id,int NewPosition) : IRequest
             throw new NotFoundException($"Column with ID {Id} not found.");
         }
 
-        return await Task.FromResult((Column.BoardId, (IEnumerable<BoardRole>)[BoardRole.Owner, BoardRole.Member]));
+        return await Task.FromResult((Column.BoardId, (IEnumerable<BoardRole>)[BoardRole.Owner, BoardRole.Editor]));
     }
 }
