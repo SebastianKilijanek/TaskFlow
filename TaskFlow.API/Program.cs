@@ -7,6 +7,7 @@ using Microsoft.OpenApi.Models;
 using Serilog;
 using TaskFlow.API.Middleware;
 using TaskFlow.Application.Common.Interfaces;
+using TaskFlow.Application.Common.Behaviors;
 using TaskFlow.Application.Common.Mapping;
 using TaskFlow.Application.Configuration;
 using TaskFlow.Domain.Entities;
@@ -55,7 +56,10 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(TaskFlow.Application.AssemblyReference).Assembly));
+builder.Services.AddMediatR(cfg => {
+    cfg.RegisterServicesFromAssembly(typeof(TaskFlow.Application.AssemblyReference).Assembly);
+    cfg.AddOpenBehavior(typeof(BoardAuthorizationBehavior<,>));
+});
 
 builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>(), typeof(TaskFlow.Application.AssemblyReference).Assembly);
 
