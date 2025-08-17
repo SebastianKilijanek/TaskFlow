@@ -6,7 +6,7 @@ using TaskFlow.Domain.Interfaces;
 
 namespace TaskFlow.Application.Columns.Queries;
 
-public record GetColumnsByBoardQuery(Guid UserId, Guid BoardId) : IRequest<List<ColumnDTO>>, IUserBoardAuthorizableRequest
+public record GetColumnsByBoardQuery(Guid UserId, Guid BoardId) : IRequest<IReadOnlyList<ColumnDTO>>, IUserBoardAuthorizableRequest
 {
     public Task<(Guid BoardId, IEnumerable<BoardRole> RequiredRoles)> GetAuthorizationDataAsync(IUnitOfWork unitOfWork)
     {
