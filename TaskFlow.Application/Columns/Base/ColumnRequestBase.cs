@@ -4,21 +4,21 @@ using TaskFlow.Domain.Entities;
 using TaskFlow.Domain.Enums;
 using TaskFlow.Domain.Interfaces;
 
-namespace TaskFlow.Application.TaskItems.Base;
+namespace TaskFlow.Application.Columns.Base;
 
-public abstract record TaskItemRequestBase(Guid UserId, Guid Id) : IUserBoardAuthorizableRequest
+public abstract record ColumnRequestBase(Guid UserId, Guid Id) : IUserBoardAuthorizableRequest
 {
-    public TaskItem? TaskItem { get; protected set; }
+    public Column? Column { get; protected set; }
     protected virtual IEnumerable<BoardRole> RequiredRoles => [BoardRole.Owner, BoardRole.Editor];
 
     public async Task<(Guid BoardId, IEnumerable<BoardRole> RequiredRoles)> GetAuthorizationDataAsync(IUnitOfWork unitOfWork)
     {
-        TaskItem = await unitOfWork.Repository<TaskItem>().GetByIdAsync(Id);
-        if (TaskItem == null)
+        Column = await unitOfWork.Repository<Column>().GetByIdAsync(Id);
+        if (Column == null)
         {
-            throw new NotFoundException($"TaskItem with id '{Id}' not found.");
+            throw new NotFoundException($"Column with id '{Id}' not found.");
         }
 
-        return (TaskItem.Column.BoardId, RequiredRoles);
+        return (Column.BoardId, RequiredRoles);
     }
 }
