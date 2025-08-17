@@ -32,7 +32,7 @@ public class UserBoardController(IMediator mediator) : ControllerBase
         return NoContent();
     }
     
-    [HttpGet("{boardId}/users/{userIdToChange}")]
+    [HttpPut("{boardId}/users/{userIdToChange}")]
     public async Task<IActionResult> ChangeUserRole(Guid boardId, Guid userIdToChange, [FromBody] ChangeUserBoardRoleCommand command)
     {
         await mediator.Send(command with { UserId = User.GetUserId(), BoardId = boardId, UserIdToChange = userIdToChange});
