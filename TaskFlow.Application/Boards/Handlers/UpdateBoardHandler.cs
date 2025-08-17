@@ -9,14 +9,15 @@ public class UpdateBoardHandler(IUnitOfWork unitOfWork) : IRequestHandler<Update
 {
     public async Task<Unit> Handle(UpdateBoardCommand request, CancellationToken cancellationToken)
     {
-        var board = await unitOfWork.Repository<Board>().GetByIdAsync(request.Id);
-        if (board == null) throw new Exception("Board not found");
+        var boardRep = unitOfWork.Repository<Board>();
+        var board = await boardRep.GetByIdAsync(request.Id);
 
-        board.Name = request.Name;
+        board!.Name = request.Name;
         board.IsPublic = request.IsPublic;
 
-        unitOfWork.Repository<Board>().Update(board);
+        boardRep.Update(board);
         await unitOfWork.SaveChangesAsync();
+
         return Unit.Value;
     }
 }
