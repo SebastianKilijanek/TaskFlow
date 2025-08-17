@@ -14,29 +14,28 @@ public class TaskItemsController(IMediator mediator) : ControllerBase
     [HttpGet("column/{columnId}")]
     public async Task<IActionResult> GetTaskItemsByColumn(Guid columnId)
     {
-        var taskItems = await mediator.Send(new GetTaskItemsByColumnQuery(columnId));
+        var taskItems = await mediator.Send(new GetTaskItemsByColumnQuery(User.GetUserId(), columnId));
         return Ok(taskItems);
     }
 
     [HttpGet("board/{boardId}")]
     public async Task<IActionResult> GetTaskItemsByBoard(Guid boardId)
     {
-        var taskItems = await mediator.Send(new GetTaskItemsByBoardQuery(boardId));
+        var taskItems = await mediator.Send(new GetTaskItemsByBoardQuery(User.GetUserId(), boardId));
         return Ok(taskItems);
     }
 
-    [HttpGet("user/{userId}")]
-    public async Task<IActionResult> GetUserTaskItems(Guid userId)
+    [HttpGet("user/{targetUserId}/board/{boardId}")]
+    public async Task<IActionResult> GetTaskItemsByUser(Guid targetUserId, Guid boardId)
     {
-        var taskItems = await mediator.Send(new GetUserTaskItemsQuery(userId));
+        var taskItems = await mediator.Send(new GetTaskItemsByUserQuery(User.GetUserId(), targetUserId, boardId));
         return Ok(taskItems);
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetTaskItem(Guid id)
     {
-        var taskItem = await mediator.Send(new GetTaskItemByIdQuery(id));
-        if (taskItem == null) return NotFound();
+        var taskItem = await mediator.Send(new GetTaskItemByIdQuery(User.GetUserId(), id));
         return Ok(taskItem);
     }
 
@@ -50,31 +49,21 @@ public class TaskItemsController(IMediator mediator) : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateTaskItem(Guid id, [FromBody] UpdateTaskItemCommand command)
     {
-        var cmd = command with { Id = id };
-        await mediator.Send(cmd);
+        await mediator.Send(command with { UserId = User.GetUserId(), Id = id });
         return NoContent();
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteTaskItem(Guid id)
     {
-        await mediator.Send(new DeleteTaskItemCommand(id));
+        await mediator.Send(new DeleteTaskItemCommand(User.GetUserId(),id));
         return NoContent();
     }
 
     [HttpPost("{id}/move")]
     public async Task<IActionResult> MoveTaskItem(Guid id, [FromBody] MoveTaskItemCommand command)
     {
-        var cmd = command with { Id = id };
-        await mediator.Send(cmd);
-        return NoContent();
-    }
-
-    [HttpPost("{id}/status")]
-    public async Task<IActionResult> ChangeTaskItemStatus(Guid id, [FromBody] ChangeTaskItemStatusCommand command)
-    {
-        var cmd = command with { Id = id };
-        await mediator.Send(cmd);
+        await mediator.Send(command with { UserId = User.GetUserId(), Id = id });
         return NoContent();
     }
 }

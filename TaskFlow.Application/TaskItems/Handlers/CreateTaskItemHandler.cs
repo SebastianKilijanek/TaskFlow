@@ -10,20 +10,28 @@ public class CreateTaskItemHandler(IUnitOfWork unitOfWork) : IRequestHandler<Cre
 {
     public async Task<Guid> Handle(CreateTaskItemCommand request, CancellationToken cancellationToken)
     {
+        var lastTaskItem = (await unitOfWork.Repository<TaskItem>()
+                .ListAsync(t => t.ColumnId == request.ColumnId))
+                .OrderByDescending(t => t.Position)
+                .FirstOrDefault();
+
+        var newPosition = (lastTaskItem?.Position ?? -1) + 1;
+
         var taskItem = new TaskItem
         {
             Id = Guid.NewGuid(),
             Title = request.Title,
             Description = request.Description,
             ColumnId = request.ColumnId,
-            Position = request.Position,
+            Position = newPosition,
             Status = TaskItemStatus.ToDo,
             CreatedAt = DateTime.UtcNow,
+            AssignedUserId = request.UserId
         };
-        
+
         await unitOfWork.Repository<TaskItem>().AddAsync(taskItem);
         await unitOfWork.SaveChangesAsync();
-        
+
         return taskItem.Id;
     }
 }

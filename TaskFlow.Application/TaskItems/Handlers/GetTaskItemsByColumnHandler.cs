@@ -8,12 +8,14 @@ using TaskFlow.Domain.Interfaces;
 namespace TaskFlow.Application.TaskItems.Handlers;
 
 public class GetTaskItemsByColumnHandler(IUnitOfWork unitOfWork, IMapper mapper)
-    : IRequestHandler<GetTaskItemsByColumnQuery, IEnumerable<TaskItemDTO>>
+    : IRequestHandler<GetTaskItemsByColumnQuery, IReadOnlyList<TaskItemDTO>>
 {
-    public async Task<IEnumerable<TaskItemDTO>> Handle(GetTaskItemsByColumnQuery request, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<TaskItemDTO>> Handle(GetTaskItemsByColumnQuery request, CancellationToken cancellationToken)
     {
         var taskItems = await unitOfWork.Repository<TaskItem>().ListAsync(t => t.ColumnId == request.ColumnId);
-        
-        return taskItems.Select(mapper.Map<TaskItemDTO>);
+
+        return taskItems.Select(mapper.Map<TaskItemDTO>)
+            .OrderBy(t => t.Position)
+            .ToList();
     }
 }

@@ -7,19 +7,19 @@ using TaskFlow.Domain.Interfaces;
 
 namespace TaskFlow.Application.TaskItems.Handlers;
 
-public class GetTaskItemsByBoardHandler(IUnitOfWork unitOfWork, IMapper mapper)
-    : IRequestHandler<GetTaskItemsByBoardQuery, IReadOnlyList<TaskItemDTO>>
+public class GetTaskItemsByUserHandler(IUnitOfWork unitOfWork, IMapper mapper)
+    : IRequestHandler<GetTaskItemsByUserQuery, IReadOnlyList<TaskItemDTO>>
 {
-    public async Task<IReadOnlyList<TaskItemDTO>> Handle(GetTaskItemsByBoardQuery request, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<TaskItemDTO>> Handle(GetTaskItemsByUserQuery request, CancellationToken cancellationToken)
     {
         var columns = await unitOfWork.Repository<Column>().ListAsync(c => c.BoardId == request.BoardId);
         var columnIds = columns.Select(c => c.Id).ToList();
 
-        var taskItems = await unitOfWork.Repository<TaskItem>().ListAsync(t => columnIds.Contains(t.ColumnId));
+        var taskItems = await unitOfWork.Repository<TaskItem>()
+            .ListAsync(t => columnIds.Contains(t.ColumnId) && t.AssignedUserId == request.TargetUserId);
 
         return taskItems.Select(mapper.Map<TaskItemDTO>)
-            .OrderBy(t => t.ColumnId)
-            .ThenBy(t => t.Position)
+            .OrderBy(t => t.CreatedAt)
             .ToList();
     }
 }
