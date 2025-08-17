@@ -5,7 +5,7 @@ using TaskFlow.Domain.Interfaces;
 
 namespace TaskFlow.Application.Boards.Commands;
 
-public record UpdateBoardCommand(Guid UserId, Guid Id, string Name, bool IsPublic) : IRequest<Unit>, IBoardAuthorizableRequest
+public record UpdateBoardCommand(Guid UserId, Guid Id, string Name, bool IsPublic) : IRequest<Unit>, IUserBoardAuthorizableRequest
 {
     public Task<(Guid BoardId, IEnumerable<BoardRole> RequiredRoles)> GetAuthorizationDataAsync(IUnitOfWork unitOfWork)
     {

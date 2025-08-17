@@ -5,7 +5,7 @@ using TaskFlow.Domain.Interfaces;
 
 namespace TaskFlow.Application.Columns.Commands;
 
-public record CreateColumnCommand(Guid UserId, string Name, Guid BoardId) : IRequest<Guid>, IBoardAuthorizableRequest
+public record CreateColumnCommand(Guid UserId, string Name, Guid BoardId) : IRequest<Guid>, IUserBoardAuthorizableRequest
 {
     public Task<(Guid BoardId, IEnumerable<BoardRole> RequiredRoles)> GetAuthorizationDataAsync(IUnitOfWork unitOfWork)
     {
