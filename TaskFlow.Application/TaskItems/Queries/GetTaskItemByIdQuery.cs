@@ -7,5 +7,5 @@ namespace TaskFlow.Application.TaskItems.Queries;
 
 public record GetTaskItemByIdQuery(Guid UserId, Guid Id) : TaskItemRequestBase(UserId, Id), IRequest<TaskItemDTO>
 {
-    protected override IEnumerable<BoardRole> RequiredRoles => [BoardRole.Owner, BoardRole.Member, BoardRole.Viewer];
+    protected override IEnumerable<BoardRole> RequiredRoles => [BoardRole.Owner, BoardRole.Editor, BoardRole.Viewer];
 }

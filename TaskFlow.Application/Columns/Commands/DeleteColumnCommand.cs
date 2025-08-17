@@ -19,6 +19,6 @@ public record DeleteColumnCommand(Guid UserId, Guid Id) : IRequest<Unit>, IUserB
             throw new NotFoundException($"Column with ID {Id} not found.");
         }
 
-        return await Task.FromResult((Column.BoardId, (IEnumerable<BoardRole>)[BoardRole.Owner, BoardRole.Member]));
+        return await Task.FromResult((Column.BoardId, (IEnumerable<BoardRole>)[BoardRole.Owner, BoardRole.Editor]));
     }
 }

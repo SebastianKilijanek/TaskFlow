@@ -18,6 +18,6 @@ public record CreateTaskItemCommand(Guid UserId, string Title, string? Descripti
             throw new NotFoundException($"Column with ID {ColumnId} not found.");
         }
         
-        return await Task.FromResult((column.BoardId, (IEnumerable<BoardRole>)[BoardRole.Owner, BoardRole.Member]));
+        return await Task.FromResult((column.BoardId, (IEnumerable<BoardRole>)[BoardRole.Owner, BoardRole.Editor]));
     }
 }

@@ -28,7 +28,7 @@ public class TransferBoardOwnershipHandler(IUnitOfWork unitOfWork, IEmailService
             throw new NotFoundException($"User with ID {request.userIdToTransfer} is not a member of this board.");
         }
 
-        currentOwnerUserBoard!.BoardRole = BoardRole.Member;
+        currentOwnerUserBoard!.BoardRole = BoardRole.Editor;
         newOwnerUserBoard.BoardRole = BoardRole.Owner;
 
         userBoardRepository.Update(currentOwnerUserBoard);

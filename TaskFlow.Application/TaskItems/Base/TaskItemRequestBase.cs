@@ -11,7 +11,7 @@ public abstract record TaskItemRequestBase(Guid userId, Guid Id) : IUserBoardAut
     public Guid UserId { get; set; } = userId;
     public Guid Id { get; set; } = Id;
     public TaskItem? TaskItem { get; protected set; }
-    protected virtual IEnumerable<BoardRole> RequiredRoles => [BoardRole.Owner, BoardRole.Member];
+    protected virtual IEnumerable<BoardRole> RequiredRoles => [BoardRole.Owner, BoardRole.Editor];
 
     public async Task<(Guid BoardId, IEnumerable<BoardRole> RequiredRoles)> GetAuthorizationDataAsync(IUnitOfWork unitOfWork)
     {
