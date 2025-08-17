@@ -9,12 +9,27 @@ public class DeleteColumnHandler(IUnitOfWork unitOfWork) : IRequestHandler<Delet
 {
     public async Task<Unit> Handle(DeleteColumnCommand request, CancellationToken cancellationToken)
     {
-        var column = await unitOfWork.Repository<Column>().GetByIdAsync(request.Id);
-        if (column == null) throw new Exception("Column not found");
+        var columnRepository = unitOfWork.Repository<Column>();
+        columnRepository.Remove(request.Column);
 
-        unitOfWork.Repository<Column>().Remove(column);
+        var remainingColumns = (await columnRepository
+                .ListAsync(c => c.BoardId == request.Column.BoardId && c.Id != request.Column.Id))
+                .OrderBy(c => c.Position)
+                .ToList();
+
+        // Reorder the position of the remaining columns
+        for (int i = 0; i < remainingColumns.Count; i++)
+        {
+            var column = remainingColumns[i];
+            if (column.Position != i)
+            {
+                column.Position = i;
+                columnRepository.Update(column);
+            }
+        }
+
         await unitOfWork.SaveChangesAsync();
-        
+
         return Unit.Value;
     }
 }
