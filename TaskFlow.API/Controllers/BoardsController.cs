@@ -18,7 +18,7 @@ public class BoardsController(IMediator mediator) : ControllerBase
         return Ok(boards);
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetBoard(Guid id)
     {
         var board = await mediator.Send(new GetBoardByIdQuery(User.GetUserId(), id));
@@ -32,14 +32,14 @@ public class BoardsController(IMediator mediator) : ControllerBase
         return CreatedAtAction(nameof(GetBoard), new { id }, null);
     }
 
-    [HttpPut("{id}")]
+    [HttpPut("{id:guid}")]
     public async Task<IActionResult> UpdateBoard(Guid id, [FromBody] UpdateBoardCommand command)
     {
         await mediator.Send(command with { UserId = User.GetUserId(), Id = id });
         return NoContent();
     }
 
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteBoard(Guid id)
     {
         await mediator.Send(new DeleteBoardCommand(User.GetUserId(), id));

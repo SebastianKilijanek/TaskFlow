@@ -11,14 +11,14 @@ namespace TaskFlow.API.Controllers;
 [Route("api/[controller]")]
 public class ColumnsController(IMediator mediator) : ControllerBase
 {
-    [HttpGet("board/{boardId}")]
+    [HttpGet("board/{boardId:guid}")]
     public async Task<IActionResult> GetColumns(Guid boardId)
     {
         var columns = await mediator.Send(new GetColumnsByBoardQuery(User.GetUserId(), boardId));
         return Ok(columns);
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetColumn(Guid id)
     {
         var column = await mediator.Send(new GetColumnByIdQuery(User.GetUserId(), id));
@@ -32,21 +32,21 @@ public class ColumnsController(IMediator mediator) : ControllerBase
         return CreatedAtAction(nameof(GetColumn), new { id }, null);
     }
 
-    [HttpPut("{id}")]
+    [HttpPut("{id:guid}")]
     public async Task<IActionResult> UpdateColumn(Guid id, [FromBody] UpdateColumnCommand command)
     {
         await mediator.Send(command with { UserId = User.GetUserId(), Id = id });
         return NoContent();
     }
 
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteColumn(Guid id)
     {
         await mediator.Send(new DeleteColumnCommand(User.GetUserId(), id));
         return NoContent();
     }
 
-    [HttpPatch("{id}/move")]
+    [HttpPatch("{id:guid}/move")]
     public async Task<IActionResult> MoveColumn(Guid id, [FromBody] MoveColumnCommand command)
     {
         await mediator.Send(command with { UserId = User.GetUserId(), Id = id });
