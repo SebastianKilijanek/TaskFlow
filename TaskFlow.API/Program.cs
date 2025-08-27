@@ -58,6 +58,7 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 builder.Services.AddMediatR(cfg => {
     cfg.RegisterServicesFromAssembly(typeof(TaskFlow.Application.AssemblyReference).Assembly);
+    cfg.AddOpenBehavior(typeof(UserExistenceCheckBehavior<,>));
     cfg.AddOpenBehavior(typeof(UserBoardAuthorizationBehavior<,>));
 });
 
