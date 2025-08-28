@@ -10,7 +10,7 @@ public class MoveTaskItemHandler(IUnitOfWork unitOfWork) : IRequestHandler<MoveT
 {
     public async Task<Unit> Handle(MoveTaskItemCommand request, CancellationToken cancellationToken)
     {
-        var taskToMove = request.TaskItem!;
+        var taskToMove = request.Entity;
         var oldColumnId = taskToMove.ColumnId;
         var newColumnId = request.NewColumnId;
 

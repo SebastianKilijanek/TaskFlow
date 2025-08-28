@@ -1,11 +1,11 @@
-using System.Text.Json.Serialization;
 using MediatR;
 using TaskFlow.Application.Common.Interfaces;
 using TaskFlow.Domain.Entities;
 
 namespace TaskFlow.Application.Users.Commands;
 
-public record DeleteUserCommand(Guid UserId) : IRequest<Unit>, IUserExistenceRequest
+public record DeleteUserCommand(Guid Id) : IRequest<Unit>, IEntityExistenceRequest<User>
 {
-    [JsonIgnore] public User User { get; set; } = null!;
+    public Guid EntityId => Id;
+    public User Entity { get; set; }
 }

@@ -10,6 +10,6 @@ public class GetTaskItemByIdHandler(IUnitOfWork unitOfWork, IMapper mapper) : IR
 {
     public async Task<TaskItemDTO> Handle(GetTaskItemByIdQuery request, CancellationToken cancellationToken)
     {
-        return mapper.Map<TaskItemDTO>(request.TaskItem);
+        return mapper.Map<TaskItemDTO>(request.Entity);
     }
 }

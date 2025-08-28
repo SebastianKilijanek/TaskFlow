@@ -14,9 +14,7 @@ public class TransferBoardOwnershipHandler(IUnitOfWork unitOfWork, IEmailService
     public async Task<Unit> Handle(TransferBoardOwnershipCommand request, CancellationToken cancellationToken)
     {
         if (request.UserId == request.userIdToTransfer)
-        {
             throw new BadRequestException("You cannot transfer ownership to yourself.");
-        }
 
         var userBoardRepository = unitOfWork.Repository<UserBoard>();
 
@@ -24,9 +22,7 @@ public class TransferBoardOwnershipHandler(IUnitOfWork unitOfWork, IEmailService
 
         var newOwnerUserBoard = await userBoardRepository.GetByIdAsync(request.userIdToTransfer, request.BoardId);
         if (newOwnerUserBoard is null)
-        {
             throw new NotFoundException($"User with ID {request.userIdToTransfer} is not a member of this board.");
-        }
 
         currentOwnerUserBoard!.BoardRole = BoardRole.Editor;
         newOwnerUserBoard.BoardRole = BoardRole.Owner;

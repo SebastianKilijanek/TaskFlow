@@ -13,12 +13,6 @@ public class GetBoardsHandler(IUnitOfWork unitOfWork, IMapper mapper)
 {
     public async Task<IReadOnlyList<BoardDTO>> Handle(GetBoardsQuery request, CancellationToken cancellationToken)
     {
-        var user = await unitOfWork.UserRepository.GetByIdAsync(request.UserId);
-        if (user is null)
-        {
-            throw new NotFoundException($"User with ID {request.UserId} not found.");
-        }
-
         var userBoards = await unitOfWork.Repository<UserBoard>()
             .ListAsync(ub => ub.UserId == request.UserId);
         var boardIds = userBoards.Select(ub => ub.BoardId).ToList();

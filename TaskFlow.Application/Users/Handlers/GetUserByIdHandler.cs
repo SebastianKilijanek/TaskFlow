@@ -12,6 +12,6 @@ public class GetUserByIdHandler(IUnitOfWork unitOfWork, IMapper mapper) : IReque
 {
     public async Task<UserDTO> Handle(GetUserByIdQuery request, CancellationToken cancellationToken)
     {
-        return mapper.Map<UserDTO>(request.User);
+        return mapper.Map<UserDTO>(request.Entity);
     }
 }

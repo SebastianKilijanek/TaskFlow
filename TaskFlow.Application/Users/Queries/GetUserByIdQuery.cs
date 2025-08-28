@@ -6,7 +6,8 @@ using TaskFlow.Domain.Entities;
 
 namespace TaskFlow.Application.Users.Queries;
 
-public record GetUserByIdQuery(Guid UserId) : IRequest<UserDTO>, IUserExistenceRequest
+public record GetUserByIdQuery(Guid UserId) : IRequest<UserDTO>, IEntityExistenceRequest<User>
 {
-    [JsonIgnore] public User User { get; set; } = null!;
+    public Guid EntityId => UserId;
+    public User Entity { get; set; }
 }

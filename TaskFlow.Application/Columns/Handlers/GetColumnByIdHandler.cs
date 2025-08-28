@@ -10,6 +10,6 @@ public class GetColumnByIdHandler(IUnitOfWork unitOfWork, IMapper mapper) : IReq
 {
     public async Task<ColumnDTO?> Handle(GetColumnByIdQuery request, CancellationToken cancellationToken)
     {
-        return mapper.Map<ColumnDTO>(request.Column);
+        return mapper.Map<ColumnDTO>(request.Entity);
     }
 }

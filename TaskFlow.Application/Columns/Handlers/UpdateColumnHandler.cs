@@ -9,9 +9,9 @@ public class UpdateColumnHandler(IUnitOfWork unitOfWork) : IRequestHandler<Updat
 {
     public async Task<Unit> Handle(UpdateColumnCommand request, CancellationToken cancellationToken)
     {
-        request.Column.Name = request.Name;
+        request.Entity.Name = request.Name;
             
-        unitOfWork.Repository<Column>().Update(request.Column);
+        unitOfWork.Repository<Column>().Update(request.Entity);
         await unitOfWork.SaveChangesAsync();
 
         return Unit.Value;

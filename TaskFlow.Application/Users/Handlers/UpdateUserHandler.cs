@@ -13,14 +13,14 @@ public class UpdateUserHandler(IUnitOfWork unitOfWork) : IRequestHandler<UpdateU
     {
         var userRepository = unitOfWork.Repository<User>();
         
-        if (request.User.Email != request.Email)
+        if (request.Entity.Email != request.Email)
         {
             var existingUserWithEmail = await unitOfWork.UserRepository.GetByEmailAsync(request.Email);
             if (existingUserWithEmail is not null && existingUserWithEmail.Id != request.UserId)
             {
                 throw new ConflictException($"Email '{request.Email}' is already in use.");
             }
-            request.User.Email = request.Email;
+            request.Entity.Email = request.Email;
         }
 
         if (!Enum.TryParse<UserRole>(request.Role, true, out var userRole))
@@ -28,10 +28,10 @@ public class UpdateUserHandler(IUnitOfWork unitOfWork) : IRequestHandler<UpdateU
             throw new BadRequestException($"Invalid role: '{request.Role}'.");
         }
 
-        request.User.UserName = request.UserName;
-        request.User.Role = userRole;
+        request.Entity.UserName = request.UserName;
+        request.Entity.Role = userRole;
 
-        userRepository.Update(request.User);
+        userRepository.Update(request.Entity);
         await unitOfWork.SaveChangesAsync();
 
         return Unit.Value;
