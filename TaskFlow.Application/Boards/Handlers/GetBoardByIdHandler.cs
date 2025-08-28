@@ -12,7 +12,6 @@ public class GetBoardByIdHandler(IUnitOfWork unitOfWork, IMapper mapper) : IRequ
 {
     public async Task<BoardDTO> Handle(GetBoardByIdQuery request, CancellationToken cancellationToken)
     {
-        var board = await unitOfWork.Repository<Board>().GetByIdAsync(request.Id);
-        return mapper.Map<BoardDTO>(board);
+        return mapper.Map<BoardDTO>(request.Board);
     }
 }

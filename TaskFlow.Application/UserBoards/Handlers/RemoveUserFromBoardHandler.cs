@@ -17,22 +17,16 @@ public class RemoveUserFromBoardHandler(IUnitOfWork unitOfWork, IEmailService em
 
         var requesterUserBoard = await userBoardRepo.GetByIdAsync(request.UserId, request.BoardId);
         if (requesterUserBoard is null || requesterUserBoard.BoardRole != BoardRole.Owner)
-        {
             throw new ForbiddenAccessException("Only the board owner can remove users.");
-        }
 
         if (request.UserIdToRemove == request.UserId)
-        {
             throw new BadRequestException("An owner cannot remove themselves from the board.");
-        }
 
         var userBoardToRemove = await unitOfWork.Repository<UserBoard>()
             .GetByIdAsync(request.UserIdToRemove, request.BoardId);
 
         if (userBoardToRemove is null)
-        {
             throw new NotFoundException($"User with ID {request.UserId} not found on board with ID {request.BoardId}.");
-        }
 
         var userEmail = userBoardToRemove.User.Email;
         var boardName = userBoardToRemove.Board.Name;

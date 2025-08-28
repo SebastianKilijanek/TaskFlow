@@ -11,12 +11,6 @@ public class CreateBoardHandler(IUnitOfWork unitOfWork) : IRequestHandler<Create
 {
     public async Task<Guid> Handle(CreateBoardCommand request, CancellationToken cancellationToken)
     {
-        var user = await unitOfWork.UserRepository.GetByIdAsync(request.UserId);
-        if (user is null)
-        {
-            throw new NotFoundException($"User with ID {request.UserId} not found.");
-        }
-
         var board = new Board
         {
             Id = Guid.NewGuid(),

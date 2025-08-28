@@ -10,10 +10,10 @@ public class DeleteColumnHandler(IUnitOfWork unitOfWork) : IRequestHandler<Delet
     public async Task<Unit> Handle(DeleteColumnCommand request, CancellationToken cancellationToken)
     {
         var columnRepository = unitOfWork.Repository<Column>();
-        columnRepository.Remove(request.Column);
+        columnRepository.Remove(request.Entity);
 
         var remainingColumns = (await columnRepository
-                .ListAsync(c => c.BoardId == request.Column.BoardId && c.Id != request.Column.Id))
+                .ListAsync(c => c.BoardId == request.Entity.BoardId && c.Id != request.Entity.Id))
                 .OrderBy(c => c.Position)
                 .ToList();
 

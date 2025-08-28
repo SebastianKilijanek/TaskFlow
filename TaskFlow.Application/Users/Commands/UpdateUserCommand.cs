@@ -5,7 +5,9 @@ using TaskFlow.Domain.Entities;
 
 namespace TaskFlow.Application.Users.Commands;
 
-public record UpdateUserCommand(Guid UserId, string Email, string UserName, string Role) : IRequest<Unit>, IUserExistenceRequest
+public record UpdateUserCommand(Guid UserId, string Email, string UserName, string Role)
+    : IRequest<Unit>, IEntityExistenceRequest<User>
 {
-    [JsonIgnore] public User User { get; set; } = null!;
+    public Guid EntityId => UserId;
+    public User Entity { get; set; }
 }

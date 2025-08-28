@@ -1,13 +1,18 @@
+using System.Text.Json.Serialization;
 using MediatR;
 using TaskFlow.Application.Columns.DTO;
 using TaskFlow.Application.Common.Interfaces;
+using TaskFlow.Domain.Entities;
 using TaskFlow.Domain.Enums;
 using TaskFlow.Domain.Interfaces;
 
 namespace TaskFlow.Application.Columns.Queries;
 
-public record GetColumnsByBoardQuery(Guid UserId, Guid BoardId) : IRequest<IReadOnlyList<ColumnDTO>>, IUserBoardAuthorizableRequest
+public record GetColumnsByBoardQuery(Guid UserId, Guid BoardId) : IRequest<IReadOnlyList<ColumnDTO>>, IUserExistenceRequest, IBoardAuthorizableRequest
 {
+    [JsonIgnore] public User User { get; set; } = null!;
+    [JsonIgnore] public Board Board { get; set; } = null!;
+    
     public Task<(Guid BoardId, IEnumerable<BoardRole> RequiredRoles)> GetAuthorizationDataAsync(IUnitOfWork unitOfWork)
     {
         return Task.FromResult((BoardId, (IEnumerable<BoardRole>)[BoardRole.Owner, BoardRole.Editor, BoardRole.Viewer]));

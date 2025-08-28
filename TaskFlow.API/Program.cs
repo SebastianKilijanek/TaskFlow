@@ -59,7 +59,8 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddMediatR(cfg => {
     cfg.RegisterServicesFromAssembly(typeof(TaskFlow.Application.AssemblyReference).Assembly);
     cfg.AddOpenBehavior(typeof(UserExistenceCheckBehavior<,>));
-    cfg.AddOpenBehavior(typeof(UserBoardAuthorizationBehavior<,>));
+    cfg.AddOpenBehavior(typeof(EntityExistenceCheckBehavior<,>));
+    cfg.AddOpenBehavior(typeof(BoardAuthorizationBehavior<,>));
 });
 
 builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>(), typeof(TaskFlow.Application.AssemblyReference).Assembly);

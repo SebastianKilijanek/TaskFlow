@@ -9,8 +9,7 @@ public class DeleteBoardHandler(IUnitOfWork unitOfWork) : IRequestHandler<Delete
 {
     public async Task<Unit> Handle(DeleteBoardCommand request, CancellationToken cancellationToken)
     {
-        var board = await unitOfWork.Repository<Board>().GetByIdAsync(request.Id);
-        unitOfWork.Repository<Board>().Remove(board!);
+        unitOfWork.Repository<Board>().Remove(request.Board);
         await unitOfWork.SaveChangesAsync();
 
         return Unit.Value;

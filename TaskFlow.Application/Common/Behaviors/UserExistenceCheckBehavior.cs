@@ -1,5 +1,4 @@
 using MediatR;
-using TaskFlow.Application.Common.Exceptions;
 using TaskFlow.Application.Common.Interfaces;
 using TaskFlow.Domain.Entities;
 using TaskFlow.Domain.Interfaces;
@@ -14,7 +13,7 @@ public class UserExistenceCheckBehavior<TRequest, TResponse>(IUnitOfWork unitOfW
         var user = await unitOfWork.Repository<User>().GetByIdAsync(request.UserId);
         if (user is null)
         {
-            throw new NotFoundException($"User with ID {request.UserId} not found.");
+            throw new UnauthorizedAccessException($"User with ID {request.UserId} not found.");
         }
 
         request.User = user;

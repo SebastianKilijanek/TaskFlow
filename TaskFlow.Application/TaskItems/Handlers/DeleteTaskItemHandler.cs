@@ -9,14 +9,14 @@ public class DeleteTaskItemHandler(IUnitOfWork unitOfWork) : IRequestHandler<Del
 {
     public async Task<Unit> Handle(DeleteTaskItemCommand request, CancellationToken cancellationToken)
     {
-        var taskItemToDelete = request.TaskItem!;
+        var taskItemToDelete = request.Entity;
         var columnId = taskItemToDelete.ColumnId;
 
         // Fetch all tasks in the column to reorder them after deletion.
         var allTasksInColumn = (await unitOfWork.Repository<TaskItem>()
                 .ListAsync(t => t.ColumnId == columnId))
-            .OrderBy(t => t.Position)
-            .ToList();
+                .OrderBy(t => t.Position)
+                .ToList();
 
         unitOfWork.Repository<TaskItem>().Remove(taskItemToDelete);
 

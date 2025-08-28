@@ -11,7 +11,7 @@ public class UpdateTaskItemHandler(IUnitOfWork unitOfWork) : IRequestHandler<Upd
 {
     public async Task<Unit> Handle(UpdateTaskItemCommand request, CancellationToken cancellationToken)
     {
-        var taskItem = request.TaskItem!;
+        var taskItem = request.Entity;
 
         if (request.AssignedUserId.HasValue && request.AssignedUserId != taskItem.AssignedUserId)
         {

@@ -12,7 +12,7 @@ public class DeleteUserHandler(IUnitOfWork unitOfWork) : IRequestHandler<DeleteU
     {
         var userRepository = unitOfWork.Repository<User>();
 
-        userRepository.Remove(request.User);
+        userRepository.Remove(request.Entity);
         await unitOfWork.SaveChangesAsync();
 
         return Unit.Value;

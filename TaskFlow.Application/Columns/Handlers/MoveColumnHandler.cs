@@ -13,11 +13,11 @@ public class MoveColumnHandler(IUnitOfWork unitOfWork) : IRequestHandler<MoveCol
         var columnRepository = unitOfWork.Repository<Column>();
         
         var columnsOnBoard = (await columnRepository
-                .ListAsync(c => c.BoardId == request.Column.BoardId))
+                .ListAsync(c => c.BoardId == request.Entity.BoardId))
                 .OrderBy(c => c.Position)
                 .ToList();
 
-        var columnInList = columnsOnBoard.FirstOrDefault(c => c.Id == request.Column.Id);
+        var columnInList = columnsOnBoard.FirstOrDefault(c => c.Id == request.Entity.Id);
         if (columnInList is null)
         {
             throw new ConflictException("Column is not part of the specified board.");

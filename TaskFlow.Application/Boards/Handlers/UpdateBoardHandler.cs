@@ -9,13 +9,10 @@ public class UpdateBoardHandler(IUnitOfWork unitOfWork) : IRequestHandler<Update
 {
     public async Task<Unit> Handle(UpdateBoardCommand request, CancellationToken cancellationToken)
     {
-        var boardRep = unitOfWork.Repository<Board>();
-        var board = await boardRep.GetByIdAsync(request.Id);
+        request.Board!.Name = request.Name;
+        request.Board.IsPublic = request.IsPublic;
 
-        board!.Name = request.Name;
-        board.IsPublic = request.IsPublic;
-
-        boardRep.Update(board);
+        unitOfWork.Repository<Board>().Update(request.Board);
         await unitOfWork.SaveChangesAsync();
 
         return Unit.Value;

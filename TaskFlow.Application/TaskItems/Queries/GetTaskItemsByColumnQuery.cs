@@ -1,5 +1,5 @@
+using System.Text.Json.Serialization;
 using MediatR;
-using TaskFlow.Application.Common.Exceptions;
 using TaskFlow.Application.Common.Interfaces;
 using TaskFlow.Application.TaskItems.DTO;
 using TaskFlow.Domain.Entities;
@@ -9,16 +9,15 @@ using TaskFlow.Domain.Interfaces;
 namespace TaskFlow.Application.TaskItems.Queries;
 
 public record GetTaskItemsByColumnQuery(Guid UserId, Guid ColumnId) 
-    : IRequest<IReadOnlyList<TaskItemDTO>>, IUserBoardAuthorizableRequest
+    : IRequest<IReadOnlyList<TaskItemDTO>>, IUserExistenceRequest, IEntityExistenceRequest<Column>, IBoardAuthorizableRequest
 {
+    [JsonIgnore] public User User { get; set; } = null!;
+    [JsonIgnore] public Guid EntityId => ColumnId;
+    [JsonIgnore] public Column Entity { get; set; } = null!;
+    [JsonIgnore] public Board Board { get; set; } = null!;
+    
     public async Task<(Guid BoardId, IEnumerable<BoardRole> RequiredRoles)> GetAuthorizationDataAsync(IUnitOfWork unitOfWork)
     {
-        var column = await unitOfWork.Repository<Column>().GetByIdAsync(ColumnId);
-        if (column is null)
-        {
-            throw new NotFoundException($"Column with ID {ColumnId} not found.");
-        }
-        
-        return await Task.FromResult((column.BoardId, (IEnumerable<BoardRole>)[BoardRole.Owner, BoardRole.Editor, BoardRole.Viewer]));
+        return await Task.FromResult((Board.Id, (IEnumerable<BoardRole>)[BoardRole.Owner, BoardRole.Editor, BoardRole.Viewer]));
     }
 }
