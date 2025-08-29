@@ -11,7 +11,7 @@ public class GetCommentsForTaskHandler(IUnitOfWork unitOfWork, IMapper mapper) :
 {
     public async Task<IReadOnlyList<CommentDTO>> Handle(GetCommentsForTaskQuery request, CancellationToken cancellationToken)
     {
-        var comments = await unitOfWork.Repository<Comment>().ListAsync(c => c.TaskItemId == request.TaskItemId);
+        var comments = await unitOfWork.Repository<Comment>().ListAsync(c => c.TaskItemId == request.TaskItemId, cancellationToken);
         return mapper.Map<IReadOnlyList<CommentDTO>>(comments);
     }
 }

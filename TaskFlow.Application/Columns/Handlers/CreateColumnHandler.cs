@@ -10,7 +10,7 @@ public class CreateColumnHandler(IUnitOfWork unitOfWork) : IRequestHandler<Creat
     public async Task<Guid> Handle(CreateColumnCommand request, CancellationToken cancellationToken)
     {
         var columnsOnBoard = await unitOfWork.Repository<Column>()
-            .ListAsync(c => c.BoardId == request.BoardId);
+            .ListAsync(c => c.BoardId == request.BoardId, cancellationToken);
 
         var newPosition = columnsOnBoard.Any() ? columnsOnBoard.Max(c => c.Position) + 1 : 0;
 
@@ -22,8 +22,8 @@ public class CreateColumnHandler(IUnitOfWork unitOfWork) : IRequestHandler<Creat
             Position = newPosition
         };
 
-        await unitOfWork.Repository<Column>().AddAsync(column);
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.Repository<Column>().AddAsync(column, cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return column.Id;
     }

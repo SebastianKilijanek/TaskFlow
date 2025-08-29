@@ -22,7 +22,7 @@ public class ChangeUserPasswordHandler(IUnitOfWork unitOfWork, IPasswordHasher<U
 
         request.User.PasswordHash = passwordHasher.HashPassword(request.User, request.NewPassword);
         userRepository.Update(request.User);
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

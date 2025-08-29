@@ -12,7 +12,7 @@ public class GetTaskItemsByColumnHandler(IUnitOfWork unitOfWork, IMapper mapper)
 {
     public async Task<IReadOnlyList<TaskItemDTO>> Handle(GetTaskItemsByColumnQuery request, CancellationToken cancellationToken)
     {
-        var taskItems = await unitOfWork.Repository<TaskItem>().ListAsync(t => t.ColumnId == request.ColumnId);
+        var taskItems = await unitOfWork.Repository<TaskItem>().ListAsync(t => t.ColumnId == request.ColumnId, cancellationToken);
 
         return taskItems.Select(mapper.Map<TaskItemDTO>)
             .OrderBy(t => t.Position)

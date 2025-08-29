@@ -2,7 +2,6 @@ using MediatR;
 using TaskFlow.Domain.Entities;
 using TaskFlow.Domain.Interfaces;
 using TaskFlow.Application.Boards.Commands;
-using TaskFlow.Application.Common.Exceptions;
 using TaskFlow.Domain.Enums;
 
 namespace TaskFlow.Application.Boards.Handlers;
@@ -17,7 +16,7 @@ public class CreateBoardHandler(IUnitOfWork unitOfWork) : IRequestHandler<Create
             Name = request.Name,
             IsPublic = request.IsPublic
         };
-        await unitOfWork.Repository<Board>().AddAsync(board);
+        await unitOfWork.Repository<Board>().AddAsync(board, cancellationToken);
 
         var userBoard = new UserBoard
         {
@@ -26,8 +25,8 @@ public class CreateBoardHandler(IUnitOfWork unitOfWork) : IRequestHandler<Create
             BoardRole = BoardRole.Owner
         };
 
-        await unitOfWork.Repository<UserBoard>().AddAsync(userBoard);
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.Repository<UserBoard>().AddAsync(userBoard, cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return board.Id;
     }

@@ -13,7 +13,7 @@ public record TransferBoardOwnershipCommand(Guid UserId, Guid BoardId, Guid user
     [JsonIgnore] public User User { get; set; } = null!;
     [JsonIgnore] public Board Board { get; set; } = null!;
 
-    public Task<(Guid BoardId, IEnumerable<BoardRole> RequiredRoles)> GetAuthorizationDataAsync(IUnitOfWork unitOfWork)
+    public Task<(Guid BoardId, IEnumerable<BoardRole> RequiredRoles)> GetAuthorizationDataAsync(IUnitOfWork unitOfWork, CancellationToken cancellationToken = default)
     {
         return Task.FromResult((BoardId, (IEnumerable<BoardRole>)[BoardRole.Owner]));
     }

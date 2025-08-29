@@ -19,9 +19,9 @@ public class EntityExistenceCheckBehavior<TRequest, TResponse>(IUnitOfWork unitO
             .MakeGenericMethod(entityType)
             .Invoke(unitOfWork, null);
 
-        var getByIdAsync = repository!.GetType().GetMethod("GetByIdAsync", [typeof(Guid)]);
+        var getByIdAsync = repository!.GetType().GetMethod("GetByIdAsync", [typeof(Guid), typeof(CancellationToken)]);
 
-        var entity = await (dynamic)getByIdAsync!.Invoke(repository, [request.EntityId])!;
+        var entity = await (dynamic)getByIdAsync!.Invoke(repository, [request.EntityId, cancellationToken])!;
 
         if (entity is null)
         {

@@ -12,7 +12,7 @@ public record UpdateBoardCommand(Guid UserId, Guid Id, string Name, bool IsPubli
     [JsonIgnore] public User User { get; set; } = null!;
     [JsonIgnore] public Board Board { get; set; } = null!;
     
-    public Task<(Guid BoardId, IEnumerable<BoardRole> RequiredRoles)> GetAuthorizationDataAsync(IUnitOfWork unitOfWork)
+    public Task<(Guid BoardId, IEnumerable<BoardRole> RequiredRoles)> GetAuthorizationDataAsync(IUnitOfWork unitOfWork, CancellationToken cancellationToken = default)
     {
         return Task.FromResult((Id, (IEnumerable<BoardRole>)[BoardRole.Owner]));
     }

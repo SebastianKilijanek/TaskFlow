@@ -13,7 +13,7 @@ public class GetUsersInBoardHandler(IUnitOfWork unitOfWork, IMapper mapper)
     public async Task<IReadOnlyList<UserBoardDTO>> Handle(GetUsersInBoardQuery request, CancellationToken cancellationToken)
     {
         var userBoards = await unitOfWork.Repository<UserBoard>()
-            .ListAsync(ub => ub.BoardId == request.BoardId);
+            .ListAsync(ub => ub.BoardId == request.BoardId, cancellationToken);
 
         return mapper.Map<IReadOnlyList<UserBoardDTO>>(userBoards);
     }

@@ -16,7 +16,7 @@ public class DeleteCommentHandler(IUnitOfWork unitOfWork) : IRequestHandler<Dele
             throw new ForbiddenAccessException("You are not authorized to delete this comment.");
 
         unitOfWork.Repository<Comment>().Remove(comment);
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

@@ -19,9 +19,9 @@ namespace TaskFlow.Infrastructure.Repositories
             return repository;
         }
 
-        public async Task<int> SaveChangesAsync()
+        public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            return await context.SaveChangesAsync();
+            return await context.SaveChangesAsync(cancellationToken);
         }
 
         public void Dispose()

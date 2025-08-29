@@ -15,7 +15,7 @@ public record AddCommentCommand(Guid UserId, Guid TaskItemId, string Content)
     [JsonIgnore] public TaskItem Entity { get; set; } = null!;
     [JsonIgnore] public Board Board { get; set; } = null!;
 
-    public Task<(Guid BoardId, IEnumerable<BoardRole> RequiredRoles)> GetAuthorizationDataAsync(IUnitOfWork unitOfWork)
+    public Task<(Guid BoardId, IEnumerable<BoardRole> RequiredRoles)> GetAuthorizationDataAsync(IUnitOfWork unitOfWork, CancellationToken cancellationToken = default)
     {
         return Task.FromResult((Entity.Column.BoardId, (IEnumerable<BoardRole>)[BoardRole.Owner, BoardRole.Editor]));
     }

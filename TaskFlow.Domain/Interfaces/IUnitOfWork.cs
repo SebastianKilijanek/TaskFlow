@@ -4,5 +4,5 @@ public interface IUnitOfWork
 {
     IUserRepository UserRepository { get; }
     IRepository<T> Repository<T>() where T : class;
-    Task<int> SaveChangesAsync();
+    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

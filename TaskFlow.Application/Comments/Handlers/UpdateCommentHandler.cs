@@ -15,7 +15,7 @@ public class UpdateCommentHandler(IUnitOfWork unitOfWork) : IRequestHandler<Upda
             throw new ForbiddenAccessException("You are not authorized to update this comment.");
 
         comment.Content = request.Content;
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

@@ -13,7 +13,7 @@ public class MoveColumnHandler(IUnitOfWork unitOfWork) : IRequestHandler<MoveCol
         var columnRepository = unitOfWork.Repository<Column>();
         
         var columnsOnBoard = (await columnRepository
-                .ListAsync(c => c.BoardId == request.Entity.BoardId))
+                .ListAsync(c => c.BoardId == request.Entity.BoardId, cancellationToken))
                 .OrderBy(c => c.Position)
                 .ToList();
 
@@ -40,7 +40,7 @@ public class MoveColumnHandler(IUnitOfWork unitOfWork) : IRequestHandler<MoveCol
             }
         }
 
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

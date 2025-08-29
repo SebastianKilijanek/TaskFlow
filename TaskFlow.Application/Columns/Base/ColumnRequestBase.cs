@@ -15,8 +15,8 @@ public abstract record ColumnRequestBase(Guid UserId, Guid Id) : IUserExistenceR
     
     protected virtual IEnumerable<BoardRole> RequiredRoles => [BoardRole.Owner, BoardRole.Editor];
 
-    public async Task<(Guid BoardId, IEnumerable<BoardRole> RequiredRoles)> GetAuthorizationDataAsync(IUnitOfWork unitOfWork)
+    public Task<(Guid BoardId, IEnumerable<BoardRole> RequiredRoles)> GetAuthorizationDataAsync(IUnitOfWork unitOfWork, CancellationToken cancellationToken = default)
     {
-        return (Entity.BoardId, RequiredRoles);
+        return Task.FromResult((Entity.BoardId, RequiredRoles));
     }
 }

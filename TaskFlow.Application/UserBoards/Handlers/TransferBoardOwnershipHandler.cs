@@ -18,9 +18,9 @@ public class TransferBoardOwnershipHandler(IUnitOfWork unitOfWork, IEmailService
 
         var userBoardRepository = unitOfWork.Repository<UserBoard>();
 
-        var currentOwnerUserBoard = await userBoardRepository.GetByIdAsync(request.UserId, request.BoardId);
+        var currentOwnerUserBoard = await userBoardRepository.GetByIdAsync(request.UserId, request.BoardId, cancellationToken);
 
-        var newOwnerUserBoard = await userBoardRepository.GetByIdAsync(request.userIdToTransfer, request.BoardId);
+        var newOwnerUserBoard = await userBoardRepository.GetByIdAsync(request.userIdToTransfer, request.BoardId, cancellationToken);
         if (newOwnerUserBoard is null)
             throw new NotFoundException($"User with ID {request.userIdToTransfer} is not a member of this board.");
 
@@ -29,7 +29,7 @@ public class TransferBoardOwnershipHandler(IUnitOfWork unitOfWork, IEmailService
 
         userBoardRepository.Update(currentOwnerUserBoard);
         userBoardRepository.Update(newOwnerUserBoard);
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         var newOwnerEmail = newOwnerUserBoard.User.Email;
         var boardName = newOwnerUserBoard.Board.Name;

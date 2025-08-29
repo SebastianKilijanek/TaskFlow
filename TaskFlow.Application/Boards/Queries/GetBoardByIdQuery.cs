@@ -13,7 +13,7 @@ public record GetBoardByIdQuery(Guid UserId, Guid Id) : IRequest<BoardDTO>, IUse
     [JsonIgnore] public User User { get; set; } = null!;
     [JsonIgnore] public Board Board { get; set; } = null!;
 
-    public Task<(Guid BoardId, IEnumerable<BoardRole> RequiredRoles)> GetAuthorizationDataAsync(IUnitOfWork unitOfWork)
+    public Task<(Guid BoardId, IEnumerable<BoardRole> RequiredRoles)> GetAuthorizationDataAsync(IUnitOfWork unitOfWork, CancellationToken cancellationToken = default)
     {
         return Task.FromResult((Id, (IEnumerable<BoardRole>)[BoardRole.Owner, BoardRole.Editor, BoardRole.Viewer]));
     }

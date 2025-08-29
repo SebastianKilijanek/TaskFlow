@@ -15,8 +15,8 @@ public record CreateTaskItemCommand(Guid UserId, string Title, string? Descripti
     [JsonIgnore] public Column Entity { get; set; } = null!;
     [JsonIgnore] public Board Board { get; set; } = null!;
     
-    public async Task<(Guid BoardId, IEnumerable<BoardRole> RequiredRoles)> GetAuthorizationDataAsync(IUnitOfWork unitOfWork)
+    public Task<(Guid BoardId, IEnumerable<BoardRole> RequiredRoles)> GetAuthorizationDataAsync(IUnitOfWork unitOfWork, CancellationToken cancellationToken = default)
     {
-        return await Task.FromResult((Board.Id, (IEnumerable<BoardRole>)[BoardRole.Owner, BoardRole.Editor]));
+        return Task.FromResult((Board.Id, (IEnumerable<BoardRole>)[BoardRole.Owner, BoardRole.Editor]));
     }
 }

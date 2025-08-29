@@ -8,8 +8,8 @@ namespace TaskFlow.Application.TaskItems.Handlers;
 
 public class GetTaskItemByIdHandler(IUnitOfWork unitOfWork, IMapper mapper) : IRequestHandler<GetTaskItemByIdQuery, TaskItemDTO>
 {
-    public async Task<TaskItemDTO> Handle(GetTaskItemByIdQuery request, CancellationToken cancellationToken)
+    public Task<TaskItemDTO> Handle(GetTaskItemByIdQuery request, CancellationToken cancellationToken)
     {
-        return mapper.Map<TaskItemDTO>(request.Entity);
+        return Task.FromResult(mapper.Map<TaskItemDTO>(request.Entity));
     }
 }

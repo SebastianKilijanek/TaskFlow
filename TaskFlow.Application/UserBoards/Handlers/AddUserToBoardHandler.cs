@@ -14,12 +14,12 @@ public class AddUserToBoardHandler(IUnitOfWork unitOfWork, IEmailService emailSe
     {
         var userBoardRepo = unitOfWork.Repository<UserBoard>();
 
-        var requesterUserBoard = await userBoardRepo.GetByIdAsync(request.UserId, request.BoardId);
+        var requesterUserBoard = await userBoardRepo.GetByIdAsync(request.UserId, request.BoardId, cancellationToken);
         if (requesterUserBoard is null || requesterUserBoard.BoardRole != BoardRole.Owner)
             throw new ForbiddenAccessException("Only the board owner can add users.");
         
         
-        var userToAdd = await unitOfWork.UserRepository.GetByEmailAsync(request.UserEmail);
+        var userToAdd = await unitOfWork.UserRepository.GetByEmailAsync(request.UserEmail, cancellationToken);
         if (userToAdd is null)
             throw new NotFoundException($"User with email '{request.UserEmail}' not found.");
 
@@ -34,8 +34,8 @@ public class AddUserToBoardHandler(IUnitOfWork unitOfWork, IEmailService emailSe
         
         var newUserBoard = new UserBoard(userToAdd.Id, request.BoardId, request.BoardRole);
 
-        await unitOfWork.Repository<UserBoard>().AddAsync(newUserBoard);
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.Repository<UserBoard>().AddAsync(newUserBoard, cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         await emailService.SendAsync(
             userToAdd.Email,

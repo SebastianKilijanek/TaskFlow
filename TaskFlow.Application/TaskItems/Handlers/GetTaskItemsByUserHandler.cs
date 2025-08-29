@@ -12,11 +12,11 @@ public class GetTaskItemsByUserHandler(IUnitOfWork unitOfWork, IMapper mapper)
 {
     public async Task<IReadOnlyList<TaskItemDTO>> Handle(GetTaskItemsByUserQuery request, CancellationToken cancellationToken)
     {
-        var columns = await unitOfWork.Repository<Column>().ListAsync(c => c.BoardId == request.BoardId);
+        var columns = await unitOfWork.Repository<Column>().ListAsync(c => c.BoardId == request.BoardId, cancellationToken);
         var columnIds = columns.Select(c => c.Id).ToList();
 
         var taskItems = await unitOfWork.Repository<TaskItem>()
-            .ListAsync(t => columnIds.Contains(t.ColumnId) && t.AssignedUserId == request.TargetUserId);
+            .ListAsync(t => columnIds.Contains(t.ColumnId) && t.AssignedUserId == request.TargetUserId, cancellationToken);
 
         return taskItems.Select(mapper.Map<TaskItemDTO>)
             .OrderBy(t => t.CreatedAt)

@@ -13,7 +13,7 @@ public class DeleteColumnHandler(IUnitOfWork unitOfWork) : IRequestHandler<Delet
         columnRepository.Remove(request.Entity);
 
         var remainingColumns = (await columnRepository
-                .ListAsync(c => c.BoardId == request.Entity.BoardId && c.Id != request.Entity.Id))
+                .ListAsync(c => c.BoardId == request.Entity.BoardId && c.Id != request.Entity.Id, cancellationToken))
                 .OrderBy(c => c.Position)
                 .ToList();
 
@@ -28,7 +28,7 @@ public class DeleteColumnHandler(IUnitOfWork unitOfWork) : IRequestHandler<Delet
             }
         }
 
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

@@ -10,7 +10,7 @@ public class UserExistenceCheckBehavior<TRequest, TResponse>(IUnitOfWork unitOfW
 {
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
-        var user = await unitOfWork.Repository<User>().GetByIdAsync(request.UserId);
+        var user = await unitOfWork.Repository<User>().GetByIdAsync(request.UserId, cancellationToken);
         if (user is null)
         {
             throw new UnauthorizedAccessException($"User with ID {request.UserId} not found.");

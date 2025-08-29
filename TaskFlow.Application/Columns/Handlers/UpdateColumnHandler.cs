@@ -12,7 +12,7 @@ public class UpdateColumnHandler(IUnitOfWork unitOfWork) : IRequestHandler<Updat
         request.Entity.Name = request.Name;
             
         unitOfWork.Repository<Column>().Update(request.Entity);
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

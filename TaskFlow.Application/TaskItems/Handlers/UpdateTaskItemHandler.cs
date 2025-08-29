@@ -16,7 +16,7 @@ public class UpdateTaskItemHandler(IUnitOfWork unitOfWork) : IRequestHandler<Upd
         if (request.AssignedUserId.HasValue && request.AssignedUserId != taskItem.AssignedUserId)
         {
             var boardId = taskItem.Column.BoardId;
-            var userBoard = await unitOfWork.Repository<UserBoard>().GetByIdAsync(request.AssignedUserId.Value, boardId);
+            var userBoard = await unitOfWork.Repository<UserBoard>().GetByIdAsync(request.AssignedUserId.Value, boardId, cancellationToken);
             if (userBoard == null)
             {
                 throw new BadRequestException($"User with ID '{request.AssignedUserId}' is not a member of this board and cannot be assigned to the task.");
@@ -34,7 +34,7 @@ public class UpdateTaskItemHandler(IUnitOfWork unitOfWork) : IRequestHandler<Upd
         taskItem.AssignedUserId = request.AssignedUserId;
 
         unitOfWork.Repository<TaskItem>().Update(taskItem);
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }
