@@ -1,4 +1,5 @@
 using System.Text;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -67,6 +68,13 @@ builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>(), typeof(T
 
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("EmailOptions"));
 builder.Services.AddScoped<IEmailService, EmailService>();
+
+builder.Services.AddApiVersioning(options =>
+{
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.ReportApiVersions = true;
+});
 
 builder.Services.AddControllers();
 
