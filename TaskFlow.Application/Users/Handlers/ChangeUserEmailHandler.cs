@@ -12,7 +12,7 @@ public class ChangeUserEmailHandler(IUnitOfWork unitOfWork) : IRequestHandler<Ch
     {
         var userRepository = unitOfWork.Repository<User>();
 
-        var existingUserWithEmail = await unitOfWork.UserRepository.GetByEmailAsync(request.NewEmail);
+        var existingUserWithEmail = await unitOfWork.UserRepository.GetByEmailAsync(request.NewEmail, cancellationToken);
         if (existingUserWithEmail is not null && existingUserWithEmail.Id != request.UserId)
         {
             throw new ConflictException($"Email {request.NewEmail} is already in use.");
@@ -20,7 +20,7 @@ public class ChangeUserEmailHandler(IUnitOfWork unitOfWork) : IRequestHandler<Ch
 
         request.User.Email = request.NewEmail;
         userRepository.Update(request.User);
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
         
         return Unit.Value;
     }

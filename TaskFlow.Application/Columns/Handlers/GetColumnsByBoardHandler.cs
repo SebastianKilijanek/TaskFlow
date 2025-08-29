@@ -12,7 +12,7 @@ public class GetColumnsByBoardHandler(IUnitOfWork unitOfWork, IMapper mapper)
 {
     public async Task<IReadOnlyList<ColumnDTO>> Handle(GetColumnsByBoardQuery request, CancellationToken cancellationToken)
     {
-        var columns = await unitOfWork.Repository<Column>().ListAsync(c => c.BoardId == request.BoardId);
+        var columns = await unitOfWork.Repository<Column>().ListAsync(c => c.BoardId == request.BoardId, cancellationToken);
         
         return columns
             .OrderBy(c => c.Position)

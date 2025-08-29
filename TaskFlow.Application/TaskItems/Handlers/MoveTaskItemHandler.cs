@@ -14,7 +14,7 @@ public class MoveTaskItemHandler(IUnitOfWork unitOfWork) : IRequestHandler<MoveT
         var oldColumnId = taskToMove.ColumnId;
         var newColumnId = request.NewColumnId;
 
-        var newColumn = await unitOfWork.Repository<Column>().GetByIdAsync(newColumnId);
+        var newColumn = await unitOfWork.Repository<Column>().GetByIdAsync(newColumnId, cancellationToken);
         if (newColumn is null)
         {
             throw new NotFoundException($"Destination column with ID '{newColumnId}' not found.");
@@ -30,14 +30,14 @@ public class MoveTaskItemHandler(IUnitOfWork unitOfWork) : IRequestHandler<MoveT
         {
             // Reorder tasks in the old column.
             var oldColumnTasks = (await unitOfWork.Repository<TaskItem>()
-                    .ListAsync(t => t.ColumnId == oldColumnId && t.Id != taskToMove.Id))
+                    .ListAsync(t => t.ColumnId == oldColumnId && t.Id != taskToMove.Id, cancellationToken))
                 .OrderBy(t => t.Position)
                 .ToList();
             ReorderTasks(oldColumnTasks);
 
             // Move task and reorder tasks in the new column.
             var newColumnTasks = (await unitOfWork.Repository<TaskItem>()
-                    .ListAsync(t => t.ColumnId == newColumnId))
+                    .ListAsync(t => t.ColumnId == newColumnId, cancellationToken))
                 .OrderBy(t => t.Position)
                 .ToList();
 
@@ -51,7 +51,7 @@ public class MoveTaskItemHandler(IUnitOfWork unitOfWork) : IRequestHandler<MoveT
         else
         {
             var columnTasks = (await unitOfWork.Repository<TaskItem>()
-                    .ListAsync(t => t.ColumnId == oldColumnId))
+                    .ListAsync(t => t.ColumnId == oldColumnId, cancellationToken))
                 .OrderBy(t => t.Position)
                 .ToList();
 
@@ -68,7 +68,7 @@ public class MoveTaskItemHandler(IUnitOfWork unitOfWork) : IRequestHandler<MoveT
             ReorderTasks(columnTasks);
         }
 
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
         return Unit.Value;
     }
 

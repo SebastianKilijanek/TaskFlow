@@ -1,5 +1,4 @@
 using MediatR;
-using TaskFlow.Application.Common.Exceptions;
 using TaskFlow.Application.Users.Commands;
 using TaskFlow.Domain.Entities;
 using TaskFlow.Domain.Interfaces;
@@ -13,7 +12,7 @@ public class DeleteUserHandler(IUnitOfWork unitOfWork) : IRequestHandler<DeleteU
         var userRepository = unitOfWork.Repository<User>();
 
         userRepository.Remove(request.Entity);
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

@@ -11,9 +11,9 @@ namespace TaskFlow.Application.Auth.Handlers;
 public class LoginUserHandler(IUnitOfWork unitOfWork, IJwtService jwtService, IPasswordHasher<User> passwordHasher)
     : IRequestHandler<LoginUserCommand, AuthResultDTO>
 {
-    public async Task<AuthResultDTO?> Handle(LoginUserCommand request, CancellationToken cancellationToken)
+    public async Task<AuthResultDTO> Handle(LoginUserCommand request, CancellationToken cancellationToken)
     {
-        var user = await unitOfWork.UserRepository.GetByEmailAsync(request.Email);
+        var user = await unitOfWork.UserRepository.GetByEmailAsync(request.Email, cancellationToken);
         if (user is null)
             throw new UnauthorizedAccessException("Invalid email or password.");
 

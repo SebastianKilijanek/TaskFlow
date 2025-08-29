@@ -13,7 +13,7 @@ public class UpdateBoardHandler(IUnitOfWork unitOfWork) : IRequestHandler<Update
         request.Board.IsPublic = request.IsPublic;
 
         unitOfWork.Repository<Board>().Update(request.Board);
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

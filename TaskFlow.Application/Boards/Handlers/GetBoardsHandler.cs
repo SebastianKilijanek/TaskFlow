@@ -2,7 +2,6 @@ using AutoMapper;
 using MediatR;
 using TaskFlow.Application.Boards.DTO;
 using TaskFlow.Application.Boards.Queries;
-using TaskFlow.Application.Common.Exceptions;
 using TaskFlow.Domain.Entities;
 using TaskFlow.Domain.Interfaces;
 
@@ -14,7 +13,7 @@ public class GetBoardsHandler(IUnitOfWork unitOfWork, IMapper mapper)
     public async Task<IReadOnlyList<BoardDTO>> Handle(GetBoardsQuery request, CancellationToken cancellationToken)
     {
         var userBoards = await unitOfWork.Repository<UserBoard>()
-            .ListAsync(ub => ub.UserId == request.UserId);
+            .ListAsync(ub => ub.UserId == request.UserId, cancellationToken);
         var boardIds = userBoards.Select(ub => ub.BoardId).ToList();
 
         if (!boardIds.Any())
@@ -23,7 +22,7 @@ public class GetBoardsHandler(IUnitOfWork unitOfWork, IMapper mapper)
         }
 
         var boards = await unitOfWork.Repository<Board>()
-            .ListAsync(b => boardIds.Contains(b.Id));
+            .ListAsync(b => boardIds.Contains(b.Id), cancellationToken);
 
         return mapper.Map<IReadOnlyList<BoardDTO>>(boards);
     }

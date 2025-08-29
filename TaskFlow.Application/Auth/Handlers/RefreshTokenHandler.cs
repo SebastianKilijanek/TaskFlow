@@ -9,7 +9,7 @@ namespace TaskFlow.Application.Auth.Handlers;
 public class RefreshTokenHandler(IUnitOfWork unitOfWork, IJwtService jwtService)
     : IRequestHandler<RefreshTokenCommand, AuthResultDTO>
 {
-    public async Task<AuthResultDTO?> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
+    public async Task<AuthResultDTO> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
     {
         var principal = jwtService.GetPrincipalFromToken(request.RefreshToken);
         if (principal == null)
@@ -19,7 +19,7 @@ public class RefreshTokenHandler(IUnitOfWork unitOfWork, IJwtService jwtService)
         if (email == null)
             throw new UnauthorizedAccessException("Invalid token: email not found.");
 
-        var user = await unitOfWork.UserRepository.GetByEmailAsync(email);
+        var user = await unitOfWork.UserRepository.GetByEmailAsync(email, cancellationToken);
         if (user == null)
             throw new UnauthorizedAccessException("User not found.");
 

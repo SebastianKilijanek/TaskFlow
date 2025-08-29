@@ -11,9 +11,9 @@ public class BoardAuthorizationBehavior<TRequest, TResponse>(IUnitOfWork unitOfW
 {
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
-        var (boardId, requiredRoles) = await request.GetAuthorizationDataAsync(unitOfWork);
+        var (boardId, requiredRoles) = await request.GetAuthorizationDataAsync(unitOfWork, cancellationToken);
 
-        var board = await unitOfWork.Repository<Board>().GetByIdAsync(boardId);
+        var board = await unitOfWork.Repository<Board>().GetByIdAsync(boardId, cancellationToken);
         if (board is null)
             throw new NotFoundException($"Board with ID {boardId} not found.");
 
@@ -22,7 +22,7 @@ public class BoardAuthorizationBehavior<TRequest, TResponse>(IUnitOfWork unitOfW
         if (board.IsPublic)
             return await next();
 
-        var userBoard = await unitOfWork.Repository<UserBoard>().GetByIdAsync(request.UserId, boardId);
+        var userBoard = await unitOfWork.Repository<UserBoard>().GetByIdAsync(request.UserId, boardId, cancellationToken);
         if (userBoard is null)
             throw new ForbiddenAccessException("You are not authorized to access this board.");
 

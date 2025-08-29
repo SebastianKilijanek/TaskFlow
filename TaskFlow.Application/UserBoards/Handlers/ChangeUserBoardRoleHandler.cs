@@ -20,14 +20,14 @@ public class ChangeUserBoardRoleHandler(IUnitOfWork unitOfWork, IEmailService em
             throw new BadRequestException("Cannot assign the Owner role. Please use the transfer ownership feature.");
 
         var userBoardToChange = await unitOfWork.Repository<UserBoard>()
-            .GetByIdAsync(request.UserIdToChange, request.BoardId);
+            .GetByIdAsync(request.UserIdToChange, request.BoardId, cancellationToken);
 
         if (userBoardToChange is null)
             throw new NotFoundException($"User with ID {request.UserIdToChange} is not a member of this board.");
 
         userBoardToChange.BoardRole = request.NewRole;
         unitOfWork.Repository<UserBoard>().Update(userBoardToChange);
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         var userEmail = userBoardToChange.User.Email;
         var boardName = userBoardToChange.Board.Name;

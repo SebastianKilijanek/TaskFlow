@@ -14,7 +14,7 @@ public class DeleteTaskItemHandler(IUnitOfWork unitOfWork) : IRequestHandler<Del
 
         // Fetch all tasks in the column to reorder them after deletion.
         var allTasksInColumn = (await unitOfWork.Repository<TaskItem>()
-                .ListAsync(t => t.ColumnId == columnId))
+                .ListAsync(t => t.ColumnId == columnId, cancellationToken))
                 .OrderBy(t => t.Position)
                 .ToList();
 
@@ -34,7 +34,7 @@ public class DeleteTaskItemHandler(IUnitOfWork unitOfWork) : IRequestHandler<Del
             }
         }
 
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

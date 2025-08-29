@@ -15,7 +15,7 @@ public class UpdateUserHandler(IUnitOfWork unitOfWork) : IRequestHandler<UpdateU
         
         if (request.Entity.Email != request.Email)
         {
-            var existingUserWithEmail = await unitOfWork.UserRepository.GetByEmailAsync(request.Email);
+            var existingUserWithEmail = await unitOfWork.UserRepository.GetByEmailAsync(request.Email, cancellationToken);
             if (existingUserWithEmail is not null && existingUserWithEmail.Id != request.UserId)
             {
                 throw new ConflictException($"Email '{request.Email}' is already in use.");
@@ -32,7 +32,7 @@ public class UpdateUserHandler(IUnitOfWork unitOfWork) : IRequestHandler<UpdateU
         request.Entity.Role = userRole;
 
         userRepository.Update(request.Entity);
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

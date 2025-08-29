@@ -18,8 +18,8 @@ public class AddCommentHandler(IUnitOfWork unitOfWork) : IRequestHandler<AddComm
             CreatedAt = DateTime.UtcNow,
         };
 
-        await unitOfWork.Repository<Comment>().AddAsync(comment);
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.Repository<Comment>().AddAsync(comment, cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return comment.Id;
     }
