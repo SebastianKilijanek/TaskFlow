@@ -36,11 +36,13 @@ public class JwtService(IOptions<JwtOptions> jwtOptions) : IJwtService
             expires: DateTime.UtcNow.AddMinutes(_jwtExpiryMinutes),
             signingCredentials: creds
         );
+        
+        var refreshClaims = claims.Append(new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()));
 
         var refreshToken = new JwtSecurityToken(
             issuer: _jwtIssuer,
             audience: _jwtAudience,
-            claims: claims,
+            claims: refreshClaims,
             expires: DateTime.UtcNow.AddMinutes(_refreshExpiryMinutes),
             signingCredentials: creds
         );

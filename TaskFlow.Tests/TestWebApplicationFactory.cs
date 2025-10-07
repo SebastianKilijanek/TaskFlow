@@ -1,3 +1,6 @@
+using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
 using AutoMapper;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
@@ -5,6 +8,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using TaskFlow.Application.Common.Behaviors;
+using TaskFlow.Application.Common.Interfaces;
 using TaskFlow.Application.Common.Mapping;
 using TaskFlow.Application.Configuration;
 using TaskFlow.Domain.Entities;
@@ -12,6 +17,7 @@ using TaskFlow.Domain.Interfaces;
 using TaskFlow.Infrastructure.Auth;
 using TaskFlow.Infrastructure.Data;
 using TaskFlow.Infrastructure.Repositories;
+using TaskFlow.Infrastructure.Services;
 
 namespace TaskFlow.Tests;
 
@@ -32,7 +38,6 @@ public class TestWebApplicationFactory<T> : WebApplicationFactory<T> where T : c
                 options.UseInMemoryDatabase(_dbName);
             });
             
-            // Configure JWT options properly
             services.Configure<JwtOptions>(options =>
             {
                 options.Issuer = "TestIssuer";
@@ -52,8 +57,27 @@ public class TestWebApplicationFactory<T> : WebApplicationFactory<T> where T : c
             });
             
             services.AddScoped<IUnitOfWork, UnitOfWork>();    
-            services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(TaskFlow.Application.AssemblyReference).Assembly));
-            services.AddAutoMapper(typeof(MappingProfile));
+            
+            services.AddMediatR(cfg => {
+                cfg.RegisterServicesFromAssembly(typeof(TaskFlow.Application.AssemblyReference).Assembly);
+                cfg.AddOpenBehavior(typeof(UserExistenceCheckBehavior<,>));
+                cfg.AddOpenBehavior(typeof(EntityExistenceCheckBehavior<,>));
+                cfg.AddOpenBehavior(typeof(BoardAuthorizationBehavior<,>));
+            });
+            
+            services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>(), typeof(TaskFlow.Application.AssemblyReference).Assembly);
+
+            services.Configure<EmailOptions>(options =>
+            {
+                options.SmtpHost = "";
+                options.SmtpPort = 0;
+                options.SmtpUser = "";
+                options.SmtpPass = "";
+                options.From = "";
+                options.EnableSsl = true;
+            });
+            services.AddScoped<IEmailService, EmailService>();
+            
             services.AddControllers();
         });
     }
@@ -70,5 +94,26 @@ public class TestWebApplicationFactory<T> : WebApplicationFactory<T> where T : c
         context.Database.EnsureCreated();
         
         return new TestScope(serviceScope, context, unitOfWork, mapper);
+    }
+    
+    public HttpClient CreateClientWithClaims(params Claim[] claims)
+    {
+        var client = CreateClient();
+        var claimsList = new List<Claim>
+        {
+            new(ClaimTypes.Name, "Test"),
+            new(ClaimTypes.NameIdentifier, TestAuthHandler.UserId),
+        };
+        
+        if (claims.Length > 0)
+        {
+            claimsList.AddRange(claims);
+        }
+
+        var claimsJson = JsonSerializer.Serialize(claimsList.Select(c => new { c.Type, c.Value }));
+        var base64Claims = Convert.ToBase64String(Encoding.UTF8.GetBytes(claimsJson));
+        client.DefaultRequestHeaders.Add(TestAuthHandler.TestClaimsHeader, base64Claims);
+        
+        return client;
     }
 }

@@ -1,6 +1,7 @@
 using System.Net;
-using System.Text;
-using System.Text.Json;
+using System.Net.Http.Json;
+using TaskFlow.Application.Auth.Commands;
+using TaskFlow.Application.Auth.DTO;
 using Xunit;
 
 namespace TaskFlow.Tests.Integration.API.Auth;
@@ -9,79 +10,122 @@ namespace TaskFlow.Tests.Integration.API.Auth;
 public class AuthAPIIntegrationTests(TestWebApplicationFactory<TaskFlow.API.AssemblyReference> factory)
     : IClassFixture<TestWebApplicationFactory<TaskFlow.API.AssemblyReference>>
 {
-    private readonly HttpClient _client = factory.CreateClient();
-
-    [Fact]
-    public async Task Register_And_Login_Should_Return_Tokens()
+    private static async Task<AuthResultDTO?> RegisterUser(HttpClient client, string email, string password)
     {
-        // Arrange
-        factory.GetTestScope();
-        
-        // Register
-        var registerPayload = new
-        {
-            email = "test@test.com",
-            userName = "Tester",
-            password = "test123"
-        };
-        var regContent = new StringContent(JsonSerializer.Serialize(registerPayload), Encoding.UTF8, "application/json");
-
-        // Act
-        var regResponse = await _client.PostAsync("/api/auth/register", regContent);
-        
-        // Assert
-        Assert.Equal(HttpStatusCode.OK, regResponse.StatusCode);
-        var regBody = await regResponse.Content.ReadAsStringAsync();
-        Assert.Contains("accessToken", regBody);
-        Assert.Contains("refreshToken", regBody);
-
-        // Login
-        // Arrange
-        var loginPayload = new
-        {
-            email = "test@test.com",
-            password = "test123"
-        };
-        var logContent = new StringContent(JsonSerializer.Serialize(loginPayload), Encoding.UTF8, "application/json");
-
-        // Act
-        var logResponse = await _client.PostAsync("/api/auth/login", logContent);
-        
-        // Assert
-        Assert.Equal(HttpStatusCode.OK, logResponse.StatusCode);
-        var logBody = await logResponse.Content.ReadAsStringAsync();
-        Assert.Contains("accessToken", logBody);
-        Assert.Contains("refreshToken", logBody);
+        var command = new RegisterUserCommand(email, "Tester", password);
+        var response = await client.PostAsJsonAsync("/api/auth/register", command);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<AuthResultDTO>();
     }
     
     [Fact]
-    public async Task Refresh_Should_Return_New_Tokens()
+    public async Task Register_Should_CreateUserAndReturnTokens()
     {
         // Arrange
         factory.GetTestScope();
-        
-        var registerPayload = new
-        {
-            email = "test@test.com",
-            userName = "Tester",
-            password = "test123"
-        };
-        var regContent = new StringContent(JsonSerializer.Serialize(registerPayload), Encoding.UTF8, "application/json");
-        var regResponse = await _client.PostAsync("/api/auth/register", regContent);
-        var regBody = await regResponse.Content.ReadAsStringAsync();
-        var regJson = JsonDocument.Parse(regBody).RootElement;
-        var refreshToken = regJson.GetProperty("refreshToken").GetString();
+        var client = factory.CreateClient();
+        var command = new RegisterUserCommand("test@test.com", "Tester", "Password123!");
 
-        var refreshPayload = new { refreshToken };
-        var refreshContent = new StringContent(JsonSerializer.Serialize(refreshPayload), Encoding.UTF8, "application/json");
-        
         // Act
-        var refreshResponse = await _client.PostAsync("/api/auth/refresh", refreshContent);
+        var response = await client.PostAsJsonAsync("/api/auth/register", command);
 
         // Assert
-        Assert.Equal(HttpStatusCode.OK, refreshResponse.StatusCode);
-        var refreshBody = await refreshResponse.Content.ReadAsStringAsync();
-        Assert.Contains("accessToken", refreshBody);
-        Assert.Contains("refreshToken", refreshBody);
+        response.EnsureSuccessStatusCode();
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var authResult = await response.Content.ReadFromJsonAsync<AuthResultDTO>();
+        Assert.NotNull(authResult);
+        Assert.False(string.IsNullOrEmpty(authResult.AccessToken));
+        Assert.False(string.IsNullOrEmpty(authResult.RefreshToken));
+        Assert.Equal(command.UserName, authResult.UserName);
+        Assert.Equal(command.Email, authResult.Email);
+    }
+
+    [Fact]
+    public async Task Login_Should_ReturnTokens_ForExistingUser()
+    {
+        // Arrange
+        factory.GetTestScope();
+        var client = factory.CreateClient();
+        await RegisterUser(client, "test@test.com", "Password123!");
+        var command = new LoginUserCommand("test@test.com", "Password123!");
+
+        // Act
+        var response = await client.PostAsJsonAsync("/api/auth/login", command);
+
+        // Assert
+        response.EnsureSuccessStatusCode();
+        var authResult = await response.Content.ReadFromJsonAsync<AuthResultDTO>();
+        Assert.NotNull(authResult);
+        Assert.False(string.IsNullOrEmpty(authResult.AccessToken));
+        Assert.False(string.IsNullOrEmpty(authResult.RefreshToken));
+    }
+
+    [Fact]
+    public async Task Refresh_Should_ReturnNewTokens()
+    {
+        // Arrange
+        factory.GetTestScope();
+        var client = factory.CreateClient();
+        var registrationResult = await RegisterUser(client, "test@test.com", "Password123!");
+        var command = new RefreshTokenCommand(registrationResult!.RefreshToken);
+
+        // Act
+        var response = await client.PostAsJsonAsync("/api/auth/refresh", command);
+
+        // Assert
+        response.EnsureSuccessStatusCode();
+        var authResult = await response.Content.ReadFromJsonAsync<AuthResultDTO>();
+        Assert.NotNull(authResult);
+        Assert.False(string.IsNullOrEmpty(authResult.AccessToken));
+        Assert.False(string.IsNullOrEmpty(authResult.RefreshToken));
+        Assert.NotEqual(registrationResult.RefreshToken, authResult.RefreshToken);
+    }
+
+    [Fact]
+    public async Task Register_Should_ReturnConflict_WhenEmailExists()
+    {
+        // Arrange
+        factory.GetTestScope();
+        var client = factory.CreateClient();
+        var email = "test@test.com";
+        await RegisterUser(client, email, "Password123!");
+        var command = new RegisterUserCommand(email, "AnotherUser", "Password123!");
+
+        // Act
+        var response = await client.PostAsJsonAsync("/api/auth/register", command);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Login_Should_ReturnUnauthorized_ForInvalidCredentials()
+    {
+        // Arrange
+        factory.GetTestScope();
+        var client = factory.CreateClient();
+        await RegisterUser(client, "test@test.com", "Password123!");
+        var command = new LoginUserCommand("test@test.com", "WrongPassword!");
+
+        // Act
+        var response = await client.PostAsJsonAsync("/api/auth/login", command);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Refresh_Should_ReturnUnauthorized_ForInvalidToken()
+    {
+        // Arrange
+        factory.GetTestScope();
+        var client = factory.CreateClient();
+        var command = new RefreshTokenCommand("invalid-token");
+
+        // Act
+        var response = await client.PostAsJsonAsync("/api/auth/refresh", command);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 }

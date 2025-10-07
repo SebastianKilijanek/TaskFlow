@@ -1,10 +1,8 @@
+using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
-using TaskFlow.Domain.Entities;
 using TaskFlow.Application.Auth.Commands;
-using TaskFlow.Application.Auth.Handlers;
-using Microsoft.AspNetCore.Identity;
-using TaskFlow.Domain.Interfaces;
+using TaskFlow.Application.Common.Exceptions;
 
 namespace TaskFlow.Tests.Integration.Application.Auth;
 
@@ -12,62 +10,109 @@ namespace TaskFlow.Tests.Integration.Application.Auth;
 public class AuthIntegrationTests(TestWebApplicationFactory<TaskFlow.API.AssemblyReference> factory)
     : IClassFixture<TestWebApplicationFactory<TaskFlow.API.AssemblyReference>>
 {
-   [Fact]
-    public async Task RegisterUserHandler_And_LoginUserHandler_Should_Work()
+    [Fact]
+    public async Task RegisterUserHandler_Should_CreateUserAndReturnTokens()
     {
         // Arrange
-        var testScope = factory.GetTestScope();
-        var jwt = testScope.ServiceScope.ServiceProvider.GetRequiredService<IJwtService>();
-        var hasher = testScope.ServiceScope.ServiceProvider.GetRequiredService<IPasswordHasher<User>>();
+        var scope = factory.GetTestScope();
+        var mediator = scope.ServiceScope.ServiceProvider.GetRequiredService<IMediator>();
+        var command = new RegisterUserCommand("test@test.com", "Tester", "Password123!");
 
         // Act
-        var registerHandler = new RegisterUserHandler(testScope.UnitOfWork, jwt, hasher);
-        var registerResult = await registerHandler.Handle(
-            new RegisterUserCommand("test@test.com", "Tester", "test123"), default);
+        var result = await mediator.Send(command);
 
         // Assert
-        Assert.Equal("Tester", registerResult.UserName);
-        Assert.NotNull(registerResult);
+        Assert.NotNull(result);
+        Assert.False(string.IsNullOrEmpty(result.AccessToken));
+        Assert.False(string.IsNullOrEmpty(result.RefreshToken));
+        Assert.Equal(command.UserName, result.UserName);
+        Assert.Equal(command.Email, result.Email);
 
-        // Act
-        var loginHandler = new LoginUserHandler(testScope.UnitOfWork, jwt, hasher);
-        var loginResult = await loginHandler.Handle(
-            new LoginUserCommand("test@test.com", "test123"), default);
-
-        // Assert
-        Assert.NotNull(loginResult);
-        Assert.Equal("Tester", loginResult.UserName);
-        Assert.Equal("test@test.com", loginResult.Email);
+        var dbUser = await scope.UnitOfWork.UserRepository.GetByEmailAsync(command.Email);
+        Assert.NotNull(dbUser);
+        Assert.Equal(command.Email, dbUser.Email);
     }
 
     [Fact]
-    public async Task RefreshTokenHandler_Should_Work()
+    public async Task LoginUserHandler_Should_ReturnTokens_ForExistingUser()
     {
         // Arrange
-        var testScope = factory.GetTestScope();
-        var jwt = testScope.ServiceScope.ServiceProvider.GetRequiredService<IJwtService>();
-        var hasher = testScope.ServiceScope.ServiceProvider.GetRequiredService<IPasswordHasher<User>>();
-
-        var registerHandler = new RegisterUserHandler(testScope.UnitOfWork, jwt, hasher);
-        var registerResult = await registerHandler.Handle(
-            new RegisterUserCommand("test2@test.com", "Tester2", "test123"), default);
-
-        var loginHandler = new LoginUserHandler(testScope.UnitOfWork, jwt, hasher);
-        var loginResult = await loginHandler.Handle(
-            new LoginUserCommand("test2@test.com", "test123"), default);
-
-        Assert.NotNull(loginResult);
-        Assert.False(string.IsNullOrEmpty(loginResult.RefreshToken));
+        var scope = factory.GetTestScope();
+        var mediator = scope.ServiceScope.ServiceProvider.GetRequiredService<IMediator>();
+        var registerCommand = new RegisterUserCommand("test@test.com", "Tester", "Password123!");
+        await mediator.Send(registerCommand);
         
+        var loginCommand = new LoginUserCommand("test@test.com", "Password123!");
+
         // Act
-        var refreshHandler = new RefreshTokenHandler(testScope.UnitOfWork, jwt);
-        var refreshResult = await refreshHandler.Handle(
-            new RefreshTokenCommand(loginResult.RefreshToken!), default);
+        var result = await mediator.Send(loginCommand);
 
         // Assert
-        Assert.NotNull(refreshResult);
-        Assert.False(string.IsNullOrEmpty(refreshResult.AccessToken));
-        Assert.Equal("Tester2", refreshResult.UserName);
-        Assert.Equal("test2@test.com", refreshResult.Email);
+        Assert.NotNull(result);
+        Assert.False(string.IsNullOrEmpty(result.AccessToken));
+        Assert.False(string.IsNullOrEmpty(result.RefreshToken));
+    }
+
+    [Fact]
+    public async Task RefreshTokenHandler_Should_ReturnNewTokens()
+    {
+        // Arrange
+        var scope = factory.GetTestScope();
+        var mediator = scope.ServiceScope.ServiceProvider.GetRequiredService<IMediator>();
+        var registerCommand = new RegisterUserCommand("test@test.com", "Tester", "Password123!");
+        var initialResult = await mediator.Send(registerCommand);
+
+        var refreshCommand = new RefreshTokenCommand(initialResult.RefreshToken);
+
+        // Act
+        var result = await mediator.Send(refreshCommand);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.False(string.IsNullOrEmpty(result.AccessToken));
+        Assert.NotEqual(initialResult.RefreshToken, result.RefreshToken);
+    }
+
+    [Fact]
+    public async Task RegisterUserHandler_Should_ThrowConflictException_WhenEmailExists()
+    {
+        // Arrange
+        var scope = factory.GetTestScope();
+        var mediator = scope.ServiceScope.ServiceProvider.GetRequiredService<IMediator>();
+        var command = new RegisterUserCommand("test@test.com", "Tester", "Password123!");
+        await mediator.Send(command);
+
+        // Act 
+        // Assert
+        await Assert.ThrowsAsync<ConflictException>(() => mediator.Send(command));
+    }
+
+    [Fact]
+    public async Task LoginUserHandler_Should_ThrowUnauthorizedAccessException_ForInvalidPassword()
+    {
+        // Arrange
+        var scope = factory.GetTestScope();
+        var mediator = scope.ServiceScope.ServiceProvider.GetRequiredService<IMediator>();
+        var registerCommand = new RegisterUserCommand("test@test.com", "Tester", "Password123!");
+        await mediator.Send(registerCommand);
+
+        var loginCommand = new LoginUserCommand("test@test.com", "WrongPassword!");
+
+        // Act 
+        // Assert
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => mediator.Send(loginCommand));
+    }
+
+    [Fact]
+    public async Task RefreshTokenHandler_Should_ThrowUnauthorizedAccessException_ForInvalidToken()
+    {
+        // Arrange
+        var scope = factory.GetTestScope();
+        var mediator = scope.ServiceScope.ServiceProvider.GetRequiredService<IMediator>();
+        var command = new RefreshTokenCommand("invalid-token");
+
+        // Act 
+        // Assert
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => mediator.Send(command));
     }
 }

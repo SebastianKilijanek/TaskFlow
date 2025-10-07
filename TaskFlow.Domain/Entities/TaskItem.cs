@@ -25,8 +25,8 @@ public class TaskItem
     public TaskItemStatus Status { get; set; }
     public required Guid ColumnId { get; set; }
     public virtual Column Column { get; set; } = null!;
-    public Guid? AssignedUserId { get; set; }
-    public User? AssignedUser { get; set; }
+    public virtual Guid? AssignedUserId { get; set; }
+    public virtual User? AssignedUser { get; set; }
     public virtual ICollection<Comment> Comments { get; set; } = new List<Comment>();
     public DateTime CreatedAt { get; set; }
 }
