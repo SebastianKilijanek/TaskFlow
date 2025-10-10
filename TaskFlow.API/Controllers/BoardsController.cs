@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskFlow.Application.Boards.Commands;
+using TaskFlow.Application.Boards.DTO;
 using TaskFlow.Application.Boards.Queries;
 
 namespace TaskFlow.API.Controllers;
@@ -47,16 +48,16 @@ public class BoardsController(IMediator mediator) : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateBoard([FromBody] CreateBoardCommand command, CancellationToken cancellationToken)
+    public async Task<IActionResult> CreateBoard([FromBody] CreateBoardDTO dto, CancellationToken cancellationToken)
     {
-        var id = await mediator.Send(command with { UserId = User.GetUserId() }, cancellationToken);
+        var id = await mediator.Send(new CreateBoardCommand( User.GetUserId(), dto.Name, dto.IsPublic), cancellationToken);
         return CreatedAtAction(nameof(GetBoard), new { id }, null);
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> UpdateBoard(Guid id, [FromBody] UpdateBoardCommand command, CancellationToken cancellationToken)
-    {
-        await mediator.Send(command with { UserId = User.GetUserId(), Id = id }, cancellationToken);
+    public async Task<IActionResult> UpdateBoard(Guid id, [FromBody] UpdateBoardDTO dto, CancellationToken cancellationToken)
+    {    
+        await mediator.Send(new UpdateBoardCommand(User.GetUserId(), id, dto.Name, dto.IsPublic), cancellationToken);
         return NoContent();
     }
 
