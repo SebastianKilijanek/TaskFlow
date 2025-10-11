@@ -7,13 +7,24 @@ namespace TaskFlow.Application.Common.Behaviors;
 
 public class EntityExistenceCheckBehavior<TRequest, TResponse>(IUnitOfWork unitOfWork)
     : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IEntityExistenceRequest<object>
+    where TRequest : notnull
 {
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
-        var entityType = typeof(TRequest).GetInterface(typeof(IEntityExistenceRequest<>).Name)!
-            .GetGenericArguments()[0];
+        var interfaceType = request.GetType()
+            .GetInterfaces()
+            .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEntityExistenceRequest<>));
+
+        if (interfaceType == null)
+        {
+            return await next();
+        }
+
+        var entityType = interfaceType.GetGenericArguments()[0];
         
+        var entityIdProperty = interfaceType.GetProperty(nameof(IEntityExistenceRequest<object>.EntityId));
+        var entityId = (Guid)entityIdProperty!.GetValue(request)!;
+
         var repository = unitOfWork.GetType()
             .GetMethod(nameof(IUnitOfWork.Repository))!
             .MakeGenericMethod(entityType)
@@ -21,14 +32,15 @@ public class EntityExistenceCheckBehavior<TRequest, TResponse>(IUnitOfWork unitO
 
         var getByIdAsync = repository!.GetType().GetMethod("GetByIdAsync", [typeof(Guid), typeof(CancellationToken)]);
 
-        var entity = await (dynamic)getByIdAsync!.Invoke(repository, [request.EntityId, cancellationToken])!;
+        var entity = await (dynamic)getByIdAsync!.Invoke(repository, [entityId, cancellationToken])!;
 
         if (entity is null)
         {
-            throw new NotFoundException($"{entityType.Name} with ID {request.EntityId} not found.");
+            throw new NotFoundException($"{entityType.Name} with ID {entityId} not found.");
         }
 
-        request.Entity = entity;
+        var entityProperty = interfaceType.GetProperty(nameof(IEntityExistenceRequest<object>.Entity));
+        entityProperty!.SetValue(request, entity);
 
         return await next();
     }

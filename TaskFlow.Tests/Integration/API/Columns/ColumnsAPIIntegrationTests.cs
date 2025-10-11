@@ -1,9 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
-using MediatR;
-using Microsoft.Extensions.DependencyInjection;
-using TaskFlow.Application.Boards.Commands;
-using TaskFlow.Application.Columns.Commands;
+using TaskFlow.Application.Boards.DTO;
+using TaskFlow.Application.Columns.DTO;
+using TaskFlow.Domain.Entities;
 using Xunit;
 
 namespace TaskFlow.Tests.Integration.API.Columns;
@@ -12,101 +11,164 @@ namespace TaskFlow.Tests.Integration.API.Columns;
 public class ColumnsAPIIntegrationTests(TestWebApplicationFactory<TaskFlow.API.AssemblyReference> factory)
     : IClassFixture<TestWebApplicationFactory<TaskFlow.API.AssemblyReference>>
 {
-    private readonly HttpClient _client = factory.CreateClient();
+    private const string BOARDS_BASE_URL = "/api/v1/boards";
+    private const string COLUMNS_BASE_URL = "/api/columns";
+    private readonly Guid _userId = Guid.Parse(TestAuthHandler.UserId);
 
-    private async Task<Guid> CreateBoard()
+    private async Task SeedUser(TestScope scope)
     {
-        var testScope = factory.GetTestScope();
-        var mediator = testScope.ServiceScope.ServiceProvider.GetRequiredService<IMediator>();
-        var boardId = await mediator.Send(new CreateBoardCommand("Test Board", true));
-        return boardId;
+        var user = new User { Id = _userId, Email = "test@test.com", UserName = "Tester", PasswordHash = "hash"};
+        await scope.DbContext.Users.AddAsync(user);
+        await scope.DbContext.SaveChangesAsync();
+    }
+
+    private async Task<Guid> CreateTestBoard(HttpClient client, string name = "Test Board", bool isPublic = true)
+    {
+        var payload = new CreateBoardDTO { Name = name, IsPublic = isPublic };
+        var response = await client.PostAsJsonAsync(BOARDS_BASE_URL, payload);
+        response.EnsureSuccessStatusCode();
+        var location = response.Headers.Location;
+        Assert.NotNull(location);
+        return Guid.Parse(location.Segments.Last());
+    }
+
+    private async Task<Guid> CreateTestColumn(HttpClient client, Guid boardId, string name = "Test Column")
+    {
+        var payload = new CreateColumnDTO { Name = name, BoardId = boardId };
+        var response = await client.PostAsJsonAsync(COLUMNS_BASE_URL, payload);
+        response.EnsureSuccessStatusCode();
+        var location = response.Headers.Location;
+        Assert.NotNull(location);
+        return Guid.Parse(location.Segments.Last());
     }
 
     [Fact]
     public async Task Post_CreateColumn_Returns201()
     {
         // Arrange
-        var boardId = await CreateBoard();
-        var payload = new CreateColumnCommand("Test Column", boardId, 0);
+        var testScope = factory.GetTestScope();
+        await SeedUser(testScope);
+        var client = factory.CreateClientWithClaims();
+        var boardId = await CreateTestBoard(client);
+        var payload = new CreateColumnDTO { Name = "Test Column", BoardId = boardId };
 
         // Act
-        var result = await _client.PostAsJsonAsync("/api/columns", payload);
+        var response = await client.PostAsJsonAsync(COLUMNS_BASE_URL, payload);
 
         // Assert
-        Assert.Equal(HttpStatusCode.Created, result.StatusCode);
-        Assert.NotNull(result.Headers.Location);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var location = response.Headers.Location;
+        Assert.NotNull(location);
+        var columnId = Guid.Parse(location.Segments.Last());
+        var column = await testScope.DbContext.Columns.FindAsync(columnId);
+        Assert.NotNull(column);
+        Assert.Equal("Test Column", column.Name);
+        Assert.Equal(boardId, column.BoardId);
     }
 
     [Fact]
-    public async Task Get_ColumnsByBoardId_Returns200()
+    public async Task Get_ColumnsByBoard_Returns200WithColumns()
     {
         // Arrange
-        var boardId = await CreateBoard();
-        var createPayload = new CreateColumnCommand("Test Column", boardId, 0);
-        await _client.PostAsJsonAsync("/api/columns", createPayload);
+        var testScope = factory.GetTestScope();
+        await SeedUser(testScope);
+        var client = factory.CreateClientWithClaims();
+        var boardId = await CreateTestBoard(client);
+        await CreateTestColumn(client, boardId, "Column 1");
+        await CreateTestColumn(client, boardId, "Column 2");
 
         // Act
-        var result = await _client.GetAsync($"/api/columns/board/{boardId}");
+        var response = await client.GetAsync($"{COLUMNS_BASE_URL}/board/{boardId}");
 
         // Assert
-        Assert.Equal(HttpStatusCode.OK, result.StatusCode);
-        var content = await result.Content.ReadAsStringAsync();
-        Assert.Contains("Test Column", content);
+        response.EnsureSuccessStatusCode();
+        var columns = await response.Content.ReadFromJsonAsync<List<ColumnDTO>>();
+        Assert.NotNull(columns);
+        Assert.Equal(2, columns.Count);
     }
 
     [Fact]
     public async Task Get_ColumnById_Returns200()
     {
         // Arrange
-        var boardId = await CreateBoard();
-        var createPayload = new CreateColumnCommand("Test Column", boardId, 0);
-        var createResponse = await _client.PostAsJsonAsync("/api/columns", createPayload);
-        var createdColumnUrl = createResponse.Headers.Location;
+        var testScope = factory.GetTestScope();
+        await SeedUser(testScope);
+        var client = factory.CreateClientWithClaims();
+        var boardId = await CreateTestBoard(client);
+        var columnId = await CreateTestColumn(client, boardId, "Test Column");
 
         // Act
-        var result = await _client.GetAsync(createdColumnUrl);
+        var response = await client.GetAsync($"{COLUMNS_BASE_URL}/{columnId}");
 
         // Assert
-        Assert.Equal(HttpStatusCode.OK, result.StatusCode);
-        var content = await result.Content.ReadAsStringAsync();
-        Assert.Contains("Test Column", content);
+        response.EnsureSuccessStatusCode();
+        var column = await response.Content.ReadFromJsonAsync<ColumnDTO>();
+        Assert.NotNull(column);
+        Assert.Equal("Test Column", column.Name);
     }
 
     [Fact]
     public async Task Put_UpdateColumn_Returns204()
     {
         // Arrange
-        var boardId = await CreateBoard();
-        var createPayload = new CreateColumnCommand("Test Column", boardId, 0);
-        var createResponse = await _client.PostAsJsonAsync("/api/columns", createPayload);
-        var createdColumnUrl = createResponse.Headers.Location!;
-        var idSegment = createdColumnUrl.Segments.Last();
-        var createdColumnId = Guid.Parse(idSegment);
-
-        var updatePayload = new UpdateColumnCommand(createdColumnId, "Updated Column", 1);
+        var testScope = factory.GetTestScope();
+        await SeedUser(testScope);
+        var client = factory.CreateClientWithClaims();
+        var boardId = await CreateTestBoard(client);
+        var columnId = await CreateTestColumn(client, boardId, "Old Name");
+        var payload = new UpdateColumnDTO { Name = "New Name" };
 
         // Act
-        var result = await _client.PutAsJsonAsync($"/api/columns/{createdColumnId}", updatePayload);
+        var response = await client.PutAsJsonAsync($"{COLUMNS_BASE_URL}/{columnId}", payload);
 
         // Assert
-        Assert.Equal(HttpStatusCode.NoContent, result.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        var updatedColumn = await testScope.DbContext.Columns.FindAsync(columnId);
+        Assert.NotNull(updatedColumn);
+        Assert.Equal("New Name", updatedColumn.Name);
     }
 
     [Fact]
     public async Task Delete_Column_Returns204()
     {
         // Arrange
-        var boardId = await CreateBoard();
-        var createPayload = new CreateColumnCommand("Test Column", boardId, 0);
-        var createResponse = await _client.PostAsJsonAsync("/api/columns", createPayload);
-        var createdColumnUrl = createResponse.Headers.Location!;
-        var idSegment = createdColumnUrl.Segments.Last();
-        var createdColumnId = Guid.Parse(idSegment);
+        var testScope = factory.GetTestScope();
+        await SeedUser(testScope);
+        var client = factory.CreateClientWithClaims();
+        var boardId = await CreateTestBoard(client);
+        var columnId = await CreateTestColumn(client, boardId);
 
         // Act
-        var result = await _client.DeleteAsync($"/api/columns/{createdColumnId}");
+        var response = await client.DeleteAsync($"{COLUMNS_BASE_URL}/{columnId}");
 
         // Assert
-        Assert.Equal(HttpStatusCode.NoContent, result.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        var deletedColumn = await testScope.DbContext.Columns.FindAsync(columnId);
+        Assert.Null(deletedColumn);
+    }
+
+    [Fact]
+    public async Task Patch_MoveColumn_Returns204()
+    {
+        // Arrange
+        var testScope = factory.GetTestScope();
+        await SeedUser(testScope);
+        var client = factory.CreateClientWithClaims();
+        var boardId = await CreateTestBoard(client);
+        var columnId1 = await CreateTestColumn(client, boardId, "Column 1");
+        var columnId2 = await CreateTestColumn(client, boardId, "Column 2");
+        var payload = new  MoveColumnDTO { NewPosition = 0 };
+
+        // Act
+        var response = await client.PatchAsJsonAsync($"{COLUMNS_BASE_URL}/{columnId2}/move", payload);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        var movedColumn = await testScope.DbContext.Columns.FindAsync(columnId2);
+        Assert.NotNull(movedColumn);
+        Assert.Equal(0, movedColumn.Position);
+        var otherColumn = await testScope.DbContext.Columns.FindAsync(columnId1);
+        Assert.NotNull(otherColumn);
+        Assert.Equal(1, otherColumn.Position);
     }
 }

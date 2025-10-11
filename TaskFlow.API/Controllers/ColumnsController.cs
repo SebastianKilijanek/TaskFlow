@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskFlow.Application.Columns.Commands;
+using TaskFlow.Application.Columns.DTO;
 using TaskFlow.Application.Columns.Queries;
 
 namespace TaskFlow.API.Controllers;
@@ -26,16 +27,16 @@ public class ColumnsController(IMediator mediator) : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateColumn([FromBody] CreateColumnCommand command, CancellationToken cancellationToken)
+    public async Task<IActionResult> CreateColumn([FromBody] CreateColumnDTO dto, CancellationToken cancellationToken)
     {
-        var id = await mediator.Send(command with { UserId = User.GetUserId() }, cancellationToken);
+        var id = await mediator.Send(new CreateColumnCommand(User.GetUserId(), dto.Name, dto.BoardId), cancellationToken);
         return CreatedAtAction(nameof(GetColumn), new { id }, null);
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> UpdateColumn(Guid id, [FromBody] UpdateColumnCommand command, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdateColumn(Guid id, [FromBody] UpdateColumnDTO dto, CancellationToken cancellationToken)
     {
-        await mediator.Send(command with { UserId = User.GetUserId(), Id = id }, cancellationToken);
+        await mediator.Send(new UpdateColumnCommand(User.GetUserId(), id, dto.Name) , cancellationToken);
         return NoContent();
     }
 
@@ -47,9 +48,9 @@ public class ColumnsController(IMediator mediator) : ControllerBase
     }
 
     [HttpPatch("{id:guid}/move")]
-    public async Task<IActionResult> MoveColumn(Guid id, [FromBody] MoveColumnCommand command, CancellationToken cancellationToken)
+    public async Task<IActionResult> MoveColumn(Guid id, [FromBody] MoveColumnDTO dto, CancellationToken cancellationToken)
     {
-        await mediator.Send(command with { UserId = User.GetUserId(), Id = id }, cancellationToken);
+        await mediator.Send(new MoveColumnCommand(User.GetUserId(), id, dto.NewPosition), cancellationToken);
         return NoContent();
     }
 }
