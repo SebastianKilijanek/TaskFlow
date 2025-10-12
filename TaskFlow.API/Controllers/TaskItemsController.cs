@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskFlow.Application.TaskItems.Commands;
+using TaskFlow.Application.TaskItems.DTO;
 using TaskFlow.Application.TaskItems.Queries;
 
 namespace TaskFlow.API.Controllers;
@@ -40,16 +41,16 @@ public class TaskItemsController(IMediator mediator) : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateTaskItem([FromBody] CreateTaskItemCommand command, CancellationToken cancellationToken)
+    public async Task<IActionResult> CreateTaskItem([FromBody] CreateTaskItemDTO dto, CancellationToken cancellationToken)
     {
-        var id = await mediator.Send(command, cancellationToken);
+        var id = await mediator.Send(new CreateTaskItemCommand(User.GetUserId(), dto.Title, dto.Description, dto.ColumnId), cancellationToken);
         return CreatedAtAction(nameof(GetTaskItem), new { id }, null);
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> UpdateTaskItem(Guid id, [FromBody] UpdateTaskItemCommand command, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdateTaskItem(Guid id, [FromBody] UpdateTaskItemDTO dto, CancellationToken cancellationToken)
     {
-        await mediator.Send(command with { UserId = User.GetUserId(), Id = id }, cancellationToken);
+        await mediator.Send(new UpdateTaskItemCommand(User.GetUserId(), id, dto.Title, dto.Description, dto.Status, dto.AssignedUserId), cancellationToken);
         return NoContent();
     }
 
@@ -61,9 +62,9 @@ public class TaskItemsController(IMediator mediator) : ControllerBase
     }
 
     [HttpPost("{id:guid}/move")]
-    public async Task<IActionResult> MoveTaskItem(Guid id, [FromBody] MoveTaskItemCommand command, CancellationToken cancellationToken)
+    public async Task<IActionResult> MoveTaskItem(Guid id, [FromBody] MoveTaskItemDTO dto, CancellationToken cancellationToken)
     {
-        await mediator.Send(command with { UserId = User.GetUserId(), Id = id }, cancellationToken);
+        await mediator.Send(new MoveTaskItemCommand(User.GetUserId(), id, dto.NewColumnId, dto.NewPosition), cancellationToken);
         return NoContent();
     }
 }
