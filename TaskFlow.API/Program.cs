@@ -1,12 +1,15 @@
 using System.Text;
 using Asp.Versioning;
+using Asp.Versioning.ApiExplorer;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using Swashbuckle.AspNetCore.SwaggerGen;
 using TaskFlow.API.Middleware;
+using TaskFlow.API.Swagger;
 using TaskFlow.Application.Common.Interfaces;
 using TaskFlow.Application.Common.Behaviors;
 using TaskFlow.Application.Common.Mapping;
@@ -71,9 +74,14 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddApiVersioning(options =>
 {
-    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.DefaultApiVersion = new ApiVersion(1);
     options.AssumeDefaultVersionWhenUnspecified = true;
     options.ReportApiVersions = true;
+})
+.AddApiExplorer(options =>
+{
+    options.GroupNameFormat = "'v'V";
+    options.SubstituteApiVersionInUrl = true;
 });
 
 builder.Services.AddControllers();
@@ -104,15 +112,54 @@ builder.Services.AddSwaggerGen(c =>
             new string[] {}
         }
     });
+    
+    c.DocInclusionPredicate((docName, apiDesc) =>
+    {
+        if (!apiDesc.TryGetMethodInfo(out var methodInfo))
+            return false;
+
+        var methodVersions = methodInfo
+            .GetCustomAttributes(true)
+            .OfType<MapToApiVersionAttribute>()
+            .SelectMany(attr => attr.Versions)
+            .ToList();
+
+        if (methodVersions.Any())
+            return methodVersions.Any(v => $"v{v.MajorVersion}" == docName);
+        
+        var controllerVersions = methodInfo.DeclaringType?
+            .GetCustomAttributes(true)
+            .OfType<ApiVersionAttribute>()
+            .SelectMany(attr => attr.Versions)
+            .ToList() ?? new();
+
+        if (controllerVersions.Any())
+            return controllerVersions.Any(v => $"v{v.MajorVersion}" == docName);
+
+        return docName == "v1";
+    });
 });
+
+builder.Services.ConfigureOptions<ConfigureSwaggerOptions>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    
+    var apiVersionProvider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
+    app.UseSwaggerUI(options =>
+    {
+        foreach (var description in apiVersionProvider.ApiVersionDescriptions)
+        {
+            options.SwaggerEndpoint(
+                $"/swagger/{description.GroupName}/swagger.json", $"TaskFlow API {description.ApiVersion}"
+            );
+        }
+    
+        options.RoutePrefix = string.Empty;
+    });
 }
 
 // app.UseHttpsRedirection();

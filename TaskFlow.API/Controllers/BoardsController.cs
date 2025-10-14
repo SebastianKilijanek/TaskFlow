@@ -10,14 +10,14 @@ namespace TaskFlow.API.Controllers;
 
 [Authorize]
 [ApiController]
-[ApiVersion("1.0")]
-[ApiVersion("2.0")]
+[ApiVersion("1")]
+[ApiVersion("2")]
 [Route("api/v{version:apiVersion}/[controller]")]
 public class BoardsController(IMediator mediator) : ControllerBase
 {
     // v1 endpoint
     [HttpGet]
-    [MapToApiVersion("1.0")]
+    [MapToApiVersion("1")]
     public async Task<IActionResult> GetBoards(CancellationToken cancellationToken)
     {
         var boards = await mediator.Send(new GetBoardsQuery(User.GetUserId()), cancellationToken);
@@ -26,7 +26,7 @@ public class BoardsController(IMediator mediator) : ControllerBase
 
     // v2 endpoint with pagination
     [HttpGet]
-    [MapToApiVersion("2.0")]
+    [MapToApiVersion("2")]
     public async Task<IActionResult> GetBoardsV2([FromQuery] int page = 1, [FromQuery] int pageSize = 10, CancellationToken cancellationToken = default)
     {
         var boards = await mediator.Send(new GetBoardsQuery(User.GetUserId()), cancellationToken);
@@ -41,6 +41,7 @@ public class BoardsController(IMediator mediator) : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [MapToApiVersion("1")]
     public async Task<IActionResult> GetBoard(Guid id, CancellationToken cancellationToken)
     {
         var board = await mediator.Send(new GetBoardByIdQuery(User.GetUserId(), id), cancellationToken);
@@ -48,6 +49,7 @@ public class BoardsController(IMediator mediator) : ControllerBase
     }
 
     [HttpPost]
+    [MapToApiVersion("1")]
     public async Task<IActionResult> CreateBoard([FromBody] CreateBoardDTO dto, CancellationToken cancellationToken)
     {
         var id = await mediator.Send(new CreateBoardCommand( User.GetUserId(), dto.Name, dto.IsPublic), cancellationToken);
@@ -55,6 +57,7 @@ public class BoardsController(IMediator mediator) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [MapToApiVersion("1")]
     public async Task<IActionResult> UpdateBoard(Guid id, [FromBody] UpdateBoardDTO dto, CancellationToken cancellationToken)
     {    
         await mediator.Send(new UpdateBoardCommand(User.GetUserId(), id, dto.Name, dto.IsPublic), cancellationToken);
@@ -62,6 +65,7 @@ public class BoardsController(IMediator mediator) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [MapToApiVersion("1")]
     public async Task<IActionResult> DeleteBoard(Guid id, CancellationToken cancellationToken)
     {
         await mediator.Send(new DeleteBoardCommand(User.GetUserId(), id), cancellationToken);
