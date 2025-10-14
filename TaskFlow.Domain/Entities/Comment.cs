@@ -2,17 +2,6 @@ namespace TaskFlow.Domain.Entities
 {
     public class Comment
     {
-        public Comment() { }
-
-        public Comment(Guid id, string content, Guid taskItemId, Guid authorId, DateTime createdAt)
-        {
-            Id = id;
-            Content = content;
-            TaskItemId = taskItemId;
-            AuthorId = authorId;
-            CreatedAt = createdAt;
-        }
-
         public required Guid Id { get; set; }
         public required string Content { get; set; }
         public required Guid TaskItemId { get; set; }

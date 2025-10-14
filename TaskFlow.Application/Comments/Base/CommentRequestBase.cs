@@ -6,11 +6,11 @@ using TaskFlow.Domain.Interfaces;
 
 namespace TaskFlow.Application.Comments.Base;
 
-public abstract record CommentRequestBase(Guid UserId, Guid Id) 
+public abstract record CommentRequestBase(Guid UserId, Guid CommentId) 
     : IUserExistenceRequest, IEntityExistenceRequest<Comment>, IBoardAuthorizableRequest
 {
     [JsonIgnore] public User User { get; set; } = null!;
-    [JsonIgnore] public Guid EntityId => Id;
+    [JsonIgnore] public Guid EntityId => CommentId;
     [JsonIgnore] public Comment Entity { get; set; } = null!;
     [JsonIgnore] public Board Board { get; set; } = null!;
 

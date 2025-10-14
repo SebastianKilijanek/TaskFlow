@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskFlow.Application.Comments.Commands;
+using TaskFlow.Application.Comments.DTO;
 using TaskFlow.Application.Comments.Queries;
 
 namespace TaskFlow.API.Controllers;
@@ -26,16 +27,16 @@ public class CommentsController(IMediator mediator) : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> AddComment([FromBody] AddCommentCommand command, CancellationToken cancellationToken)
+    public async Task<IActionResult> AddComment([FromBody] AddCommentDTO dto, CancellationToken cancellationToken)
     {
-        var id = await mediator.Send(command with { UserId = User.GetUserId() }, cancellationToken);
+        var id = await mediator.Send(new AddCommentCommand(User.GetUserId(), dto.TaskItemId, dto.Content), cancellationToken);
         return CreatedAtAction(nameof(GetComment), new { id }, null);
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> UpdateComment(Guid id, [FromBody] UpdateCommentCommand command, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdateComment(Guid id, [FromBody] UpdateCommentDTO dto, CancellationToken cancellationToken)
     {
-        await mediator.Send(command with { UserId = User.GetUserId(), Id = id }, cancellationToken);
+        await mediator.Send(new UpdateCommentCommand(User.GetUserId(), dto.CommentId, dto.Content), cancellationToken);
         return NoContent();
     }
 
