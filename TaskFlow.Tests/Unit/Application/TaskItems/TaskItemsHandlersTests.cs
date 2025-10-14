@@ -14,19 +14,13 @@ namespace TaskFlow.Tests.Unit.Application.TaskItems;
 
 public class TaskItemsHandlersTests
 {
-    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
-    private readonly Mock<IRepository<TaskItem>> _taskItemRepositoryMock;
-    private readonly Mock<IRepository<Column>> _columnRepositoryMock;
-    private readonly Mock<IMapper> _mapperMock;
-    private readonly Guid _userId = Guid.NewGuid();
+    private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
+    private readonly Mock<IRepository<TaskItem>> _taskItemRepositoryMock = new();
+    private readonly Mock<IRepository<Column>> _columnRepositoryMock = new();
+    private readonly Mock<IMapper> _mapperMock = new();
 
     public TaskItemsHandlersTests()
     {
-        _unitOfWorkMock = new Mock<IUnitOfWork>();
-        _taskItemRepositoryMock = new Mock<IRepository<TaskItem>>();
-        _columnRepositoryMock = new Mock<IRepository<Column>>();
-        _mapperMock = new Mock<IMapper>();
-
         _unitOfWorkMock.Setup(u => u.Repository<Column>()).Returns(_columnRepositoryMock.Object);
         _unitOfWorkMock.Setup(u => u.Repository<TaskItem>()).Returns(_taskItemRepositoryMock.Object);
     }
@@ -36,7 +30,7 @@ public class TaskItemsHandlersTests
     {
         // Arrange
         var columnId = Guid.NewGuid();
-        var command = new CreateTaskItemCommand(_userId, "New Task", "Description", columnId);
+        var command = new CreateTaskItemCommand(TestSeeder.DefaultUserId, "New Task", "Description", columnId);
         var handler = new CreateTaskItemHandler(_unitOfWorkMock.Object);
 
         _taskItemRepositoryMock.Setup(r => r.ListAsync(It.IsAny<Expression<Func<TaskItem, bool>>>(), 
@@ -70,7 +64,7 @@ public class TaskItemsHandlersTests
             .ReturnsAsync(tasks);
 
         var handler = new DeleteTaskItemHandler(_unitOfWorkMock.Object);
-        var command = new DeleteTaskItemCommand(_userId, taskToDelete.Id) { Entity = taskToDelete };
+        var command = new DeleteTaskItemCommand(TestSeeder.DefaultUserId, taskToDelete.Id) { Entity = taskToDelete };
 
         // Act
         await handler.Handle(command, CancellationToken.None);
@@ -96,7 +90,7 @@ public class TaskItemsHandlersTests
             Column = new Column { Id = columnId, BoardId = Guid.NewGuid(), Name = "Test Column" }
         };
         var handler = new UpdateTaskItemHandler(_unitOfWorkMock.Object);
-        var command = new UpdateTaskItemCommand(_userId, taskItem.Id, "New Title", "New Desc", 
+        var command = new UpdateTaskItemCommand(TestSeeder.DefaultUserId, taskItem.Id, "New Title", "New Desc", 
             (int)TaskItemStatus.InProgress, null) { Entity = taskItem };
 
         // Act
@@ -127,7 +121,7 @@ public class TaskItemsHandlersTests
             .ReturnsAsync(tasks);
 
         var handler = new MoveTaskItemHandler(_unitOfWorkMock.Object);
-        var command = new MoveTaskItemCommand(_userId, taskToMove.Id, columnId, 0) { Entity = taskToMove };
+        var command = new MoveTaskItemCommand(TestSeeder.DefaultUserId, taskToMove.Id, columnId, 0) { Entity = taskToMove };
 
         // Act
         await handler.Handle(command, CancellationToken.None);
@@ -164,7 +158,7 @@ public class TaskItemsHandlersTests
             });
 
         var handler = new MoveTaskItemHandler(_unitOfWorkMock.Object);
-        var command = new MoveTaskItemCommand(_userId, taskToMove.Id, newColumnId, 1) { Entity = taskToMove };
+        var command = new MoveTaskItemCommand(TestSeeder.DefaultUserId, taskToMove.Id, newColumnId, 1) { Entity = taskToMove };
 
         // Act
         await handler.Handle(command, CancellationToken.None);
@@ -186,7 +180,7 @@ public class TaskItemsHandlersTests
 
         _mapperMock.Setup(m => m.Map<TaskItemDTO>(taskItem)).Returns(taskItemDTO);
         var handler = new GetTaskItemByIdHandler(_unitOfWorkMock.Object, _mapperMock.Object);
-        var query = new GetTaskItemByIdQuery(_userId, taskItemId) { Entity = taskItem };
+        var query = new GetTaskItemByIdQuery(TestSeeder.DefaultUserId, taskItemId) { Entity = taskItem };
 
         // Act
         var result = await handler.Handle(query, CancellationToken.None);
@@ -224,7 +218,7 @@ public class TaskItemsHandlersTests
         _mapperMock.Setup(m => m.Map<TaskItemDTO>(taskItems[1])).Returns(taskItemDTOs[1]);
 
         var handler = new GetTaskItemsByColumnHandler(_unitOfWorkMock.Object, _mapperMock.Object);
-        var query = new GetTaskItemsByColumnQuery(_userId, columnId);
+        var query = new GetTaskItemsByColumnQuery(TestSeeder.DefaultUserId, columnId);
 
         // Act
         var result = await handler.Handle(query, CancellationToken.None);

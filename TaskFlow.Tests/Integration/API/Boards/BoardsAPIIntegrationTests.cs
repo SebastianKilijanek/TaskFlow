@@ -1,12 +1,11 @@
 using System.Net;
 using System.Net.Http.Json;
-using Microsoft.EntityFrameworkCore;
 using TaskFlow.Application.Boards.DTO;
 using TaskFlow.Domain.Entities;
 using TaskFlow.Domain.Enums;
 using Xunit;
 
-namespace TaskFlow.Tests.Integration.API.Boards;
+namespace TaskFlow.Tests.API.Boards;
 
 [Collection("SequentialTests")]
 public class BoardsAPIIntegrationTests(TestWebApplicationFactory<TaskFlow.API.AssemblyReference> factory)
@@ -14,37 +13,15 @@ public class BoardsAPIIntegrationTests(TestWebApplicationFactory<TaskFlow.API.As
 {
     private const string BASE_URL = "/api/v1/boards/";
 
-    private static async Task CreateTestUser(TestScope testScope)
-    {
-        var userId = Guid.Parse(TestAuthHandler.UserId);
-        if (!await testScope.DbContext.Users.AnyAsync(u => u.Id == userId))
-        {
-            testScope.DbContext.Users.Add(new User { Id = userId, Email = "test@test.com", UserName = "Tester", PasswordHash = "hash" });
-            await testScope.DbContext.SaveChangesAsync();
-        }
-    }
-
-    private static async Task<Guid> CreateTestBoard(HttpClient client, string name, bool isPublic)
-    {
-        var payload = new CreateBoardDTO { Name = name, IsPublic = isPublic };
-        var response = await client.PostAsJsonAsync(BASE_URL, payload);
-        response.EnsureSuccessStatusCode();
-
-        var location = response.Headers.Location;
-        Assert.NotNull(location);
-        return Guid.Parse(location.Segments.Last());
-    }
-
     [Fact]
     public async Task Post_CreateBoard_Returns201AndCreatesUserBoard()
     {
         // Arrange
         var testScope = factory.GetTestScope();
         var client = factory.CreateClientWithClaims();
-        await CreateTestUser(testScope);
+        var ownerId = (await TestSeeder.SeedUser(testScope)).Id;
         var boardName = "API Test Board";
         var payload = new CreateBoardDTO { Name = boardName, IsPublic = true };
-        var ownerId = Guid.Parse(TestAuthHandler.UserId);
 
         // Act
         var response = await client.PostAsJsonAsync(BASE_URL, payload);
@@ -55,12 +32,11 @@ public class BoardsAPIIntegrationTests(TestWebApplicationFactory<TaskFlow.API.As
         Assert.NotNull(location);
         var boardId = Guid.Parse(location.Segments.Last());
 
-        var board = await testScope.DbContext.Boards.FindAsync(boardId);
+        var board = await testScope.UnitOfWork.Repository<Board>().GetByIdAsync(boardId);
         Assert.NotNull(board);
         Assert.Equal(boardName, board.Name);
 
-        var userBoard = await testScope.DbContext.UserBoards
-            .FirstOrDefaultAsync(ub => ub.BoardId == boardId && ub.UserId == ownerId);
+        var userBoard = await testScope.UnitOfWork.Repository<UserBoard>().GetByIdAsync(ownerId, boardId);
         Assert.NotNull(userBoard);
         Assert.Equal(BoardRole.Owner, userBoard.BoardRole);
     }
@@ -71,9 +47,9 @@ public class BoardsAPIIntegrationTests(TestWebApplicationFactory<TaskFlow.API.As
         // Arrange
         var testScope = factory.GetTestScope();
         var client = factory.CreateClientWithClaims();
-        await CreateTestUser(testScope);
-        await CreateTestBoard(client, "Board 1", true);
-        await CreateTestBoard(client, "Board 2", false);
+        await TestSeeder.SeedUser(testScope);
+        await TestSeeder.SeedBoard(testScope, name: "Board 1", isPublic: true);
+        await TestSeeder.SeedBoard(testScope, name: "Board 2", isPublic: false);
 
         // Act
         var response = await client.GetAsync(BASE_URL);
@@ -93,8 +69,8 @@ public class BoardsAPIIntegrationTests(TestWebApplicationFactory<TaskFlow.API.As
         // Arrange
         var testScope = factory.GetTestScope();
         var client = factory.CreateClientWithClaims();
-        await CreateTestUser(testScope);
-        var createdBoardId = await CreateTestBoard(client, "Get By Id Test", true);
+        await TestSeeder.SeedUser(testScope);
+        var createdBoardId = await TestSeeder.SeedBoard(testScope, name: "Get By Id Test", isPublic: true);
 
         // Act
         var response = await client.GetAsync($"{BASE_URL}{createdBoardId}");
@@ -112,16 +88,18 @@ public class BoardsAPIIntegrationTests(TestWebApplicationFactory<TaskFlow.API.As
         // Arrange
         var testScope = factory.GetTestScope();
         var client = factory.CreateClientWithClaims();
-        await CreateTestUser(testScope);
-        var createdBoardId = await CreateTestBoard(client, "Before Update", true);
+        await TestSeeder.SeedUser(testScope);
+        var createdBoardId = await TestSeeder.SeedBoard(testScope, name:"Before Update", isPublic: true);
         var updatePayload = new UpdateBoardDTO { Name = "After Update", IsPublic = false };
+
+        testScope.DbContext.ChangeTracker.Clear();
 
         // Act
         var response = await client.PutAsJsonAsync($"{BASE_URL}{createdBoardId}", updatePayload);
 
         // Assert
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
-        var updatedBoard = await testScope.DbContext.Boards.FindAsync(createdBoardId);
+        var updatedBoard = await testScope.UnitOfWork.Repository<Board>().GetByIdAsync(createdBoardId);
         Assert.NotNull(updatedBoard);
         Assert.Equal("After Update", updatedBoard.Name);
         Assert.False(updatedBoard.IsPublic);
@@ -133,15 +111,17 @@ public class BoardsAPIIntegrationTests(TestWebApplicationFactory<TaskFlow.API.As
         // Arrange
         var testScope = factory.GetTestScope();
         var client = factory.CreateClientWithClaims();
-        await CreateTestUser(testScope);
-        var createdBoardId = await CreateTestBoard(client, "To Be Deleted", true);
-        
+        await TestSeeder.SeedUser(testScope);
+        var createdBoardId = await TestSeeder.SeedBoard(testScope, name:"To Be Deleted", isPublic:true);
+
+        testScope.DbContext.ChangeTracker.Clear();
+
         // Act
         var response = await client.DeleteAsync($"{BASE_URL}{createdBoardId}");
 
         // Assert
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
-        var deletedBoard = await testScope.DbContext.Boards.FindAsync(createdBoardId);
+        var deletedBoard = await testScope.UnitOfWork.Repository<Board>().GetByIdAsync(createdBoardId);
         Assert.Null(deletedBoard);
     }
 }

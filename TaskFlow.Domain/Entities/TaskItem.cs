@@ -4,20 +4,6 @@ namespace TaskFlow.Domain.Entities;
 
 public class TaskItem
 {
-    public TaskItem() { }
-
-    public TaskItem(Guid id, string title, string? description, int position, TaskItemStatus status, Guid columnId, Guid? assignedUserId, DateTime createdAt)
-    {
-        Id = id;
-        Title = title;
-        Description = description;
-        Position = position;
-        Status = status;
-        ColumnId = columnId;
-        AssignedUserId = assignedUserId;
-        CreatedAt = createdAt;
-    }
-
     public required Guid Id { get; set; }
     public required string Title { get; set; }
     public string? Description { get; set; }

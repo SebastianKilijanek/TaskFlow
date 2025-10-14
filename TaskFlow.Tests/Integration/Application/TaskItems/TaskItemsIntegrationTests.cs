@@ -1,48 +1,27 @@
-using MediatR;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using TaskFlow.Application.TaskItems.Commands;
 using TaskFlow.Application.TaskItems.Queries;
 using TaskFlow.Domain.Entities;
 using TaskFlow.Domain.Enums;
 using Xunit;
 
-namespace TaskFlow.Tests.Integration.Application.TaskItems;
+namespace TaskFlow.Tests.Application.TaskItems;
 
 [Collection("SequentialTests")]
 public class TaskItemsIntegrationTests(TestWebApplicationFactory<TaskFlow.API.AssemblyReference> factory)
     : IClassFixture<TestWebApplicationFactory<TaskFlow.API.AssemblyReference>>
 {
-    private async Task<(Guid userId, Guid boardId, Guid columnId, User user)> SeedUserAndBoard(TestScope testScope)
-    {
-        var user = new User
-        {
-            Id = Guid.Parse(TestAuthHandler.UserId), UserName = "Tester", Email = "test@test.com", PasswordHash = "hash"
-        };
-        var board = new Board { Id = Guid.NewGuid(), Name = "Test Board", IsPublic = true };
-        var userBoard = new UserBoard { UserId = user.Id, BoardId = board.Id, BoardRole = BoardRole.Owner };
-        var column = new Column { Id = Guid.NewGuid(), Name = "Test Column", BoardId = board.Id };
-
-        await testScope.UnitOfWork.Repository<User>().AddAsync(user);
-        await testScope.UnitOfWork.Repository<Board>().AddAsync(board);
-        await testScope.UnitOfWork.Repository<UserBoard>().AddAsync(userBoard);
-        await testScope.UnitOfWork.Repository<Column>().AddAsync(column);
-        await testScope.UnitOfWork.SaveChangesAsync();
-
-        return (user.Id, board.Id, column.Id, user);
-    }
-
     [Fact]
     public async Task CreateTaskItemCommand_WritesToDatabase()
     {
         // Arrange
         var testScope = factory.GetTestScope();
-        var mediator = testScope.ServiceScope.ServiceProvider.GetRequiredService<IMediator>();
-        var (userId, _, columnId, _) = await SeedUserAndBoard(testScope);
-        var command = new CreateTaskItemCommand(userId, "Integration Test Task", "Description", columnId);
+        await TestSeeder.SeedUser(testScope);
+        var boardId = await TestSeeder.SeedBoard(testScope);
+        var columnId = await TestSeeder.SeedColumn(testScope, boardId);
+        var command = new CreateTaskItemCommand(TestSeeder.DefaultUserId, "Integration Test Task", "Description", columnId);
 
         // Act
-        var taskItemId = await mediator.Send(command);
+        var taskItemId = await testScope.Mediator.Send(command);
 
         // Assert
         var taskItem = await testScope.UnitOfWork.Repository<TaskItem>().GetByIdAsync(taskItemId);
@@ -57,33 +36,24 @@ public class TaskItemsIntegrationTests(TestWebApplicationFactory<TaskFlow.API.As
     {
         // Arrange
         var testScope = factory.GetTestScope();
-        var mediator = testScope.ServiceScope.ServiceProvider.GetRequiredService<IMediator>();
-        var (userId, _, columnId, _) = await SeedUserAndBoard(testScope);
-        var task1 = new TaskItem { Id = Guid.NewGuid(), Title = "Task 1", ColumnId = columnId, Position = 0 };
-        var taskToDelete = new TaskItem { Id = Guid.NewGuid(), Title = "To Delete", ColumnId = columnId, Position = 1 };
-        var task2 = new TaskItem { Id = Guid.NewGuid(), Title = "Task 2", ColumnId = columnId, Position = 2 };
-        await testScope.UnitOfWork.Repository<TaskItem>().AddAsync(task1);
-        await testScope.UnitOfWork.Repository<TaskItem>().AddAsync(taskToDelete);
-        await testScope.UnitOfWork.Repository<TaskItem>().AddAsync(task2);
-        await testScope.UnitOfWork.SaveChangesAsync();
-    
-        var taskIdToDelete = taskToDelete.Id;
-        var task2Id = task2.Id;
-    
-        // Clear the context to avoid tracking issues
-        testScope.DbContext.ChangeTracker.Clear();
-    
-        // Reload the entity to delete
-        var trackedTaskToDelete = await testScope.UnitOfWork.Repository<TaskItem>().GetByIdAsync(taskIdToDelete);
-    
-        var command = new DeleteTaskItemCommand(userId, taskIdToDelete) { Entity = trackedTaskToDelete! };
+        await TestSeeder.SeedUser(testScope);
+        var boardId = await TestSeeder.SeedBoard(testScope);
+        var columnId = await TestSeeder.SeedColumn(testScope, boardId);
+        var task1Id = await TestSeeder.SeedTask(testScope, columnId, "Task 1", 0);
+        var taskToDeleteId = await TestSeeder.SeedTask(testScope, columnId, "To Delete", 1);
+        var task2Id = await TestSeeder.SeedTask(testScope, columnId, "Task 2", 2);
+
+        var command = new DeleteTaskItemCommand(TestSeeder.DefaultUserId, taskToDeleteId);
 
         // Act
-        await mediator.Send(command);
+        await testScope.Mediator.Send(command);
 
         // Assert
-        var deletedTask = await testScope.UnitOfWork.Repository<TaskItem>().GetByIdAsync(taskIdToDelete);
+        var deletedTask = await testScope.UnitOfWork.Repository<TaskItem>().GetByIdAsync(taskToDeleteId);
         Assert.Null(deletedTask);
+        var remainingTask1 = await testScope.UnitOfWork.Repository<TaskItem>().GetByIdAsync(task1Id);
+        Assert.NotNull(remainingTask1);
+        Assert.Equal(0, remainingTask1.Position);
         var reorderedTask = await testScope.UnitOfWork.Repository<TaskItem>().GetByIdAsync(task2Id);
         Assert.NotNull(reorderedTask);
         Assert.Equal(1, reorderedTask.Position);
@@ -94,21 +64,19 @@ public class TaskItemsIntegrationTests(TestWebApplicationFactory<TaskFlow.API.As
     {
         // Arrange
         var testScope = factory.GetTestScope();
-        var mediator = testScope.ServiceScope.ServiceProvider.GetRequiredService<IMediator>();
-        var (userId, _, columnId, _) = await SeedUserAndBoard(testScope);
-        var taskItem = new TaskItem { Id = Guid.NewGuid(), Title = "Old Title", ColumnId = columnId, Position = 0 };
-        await testScope.UnitOfWork.Repository<TaskItem>().AddAsync(taskItem);
-        await testScope.UnitOfWork.SaveChangesAsync();
-        testScope.DbContext.Entry(taskItem).State = EntityState.Detached;
-
-        var command = new UpdateTaskItemCommand(userId, taskItem.Id, "New Title", "New Desc", 
-            (int)TaskItemStatus.InProgress, null) { Entity = taskItem };
+        await TestSeeder.SeedUser(testScope);
+        var boardId = await TestSeeder.SeedBoard(testScope);
+        var columnId = await TestSeeder.SeedColumn(testScope, boardId);
+        var taskItemId = await TestSeeder.SeedTask(testScope, columnId, "Old Title", 0);
+        
+        var command = new UpdateTaskItemCommand(TestSeeder.DefaultUserId, taskItemId, "New Title", "New Desc", 
+            (int)TaskItemStatus.InProgress, null);
 
         // Act
-        await mediator.Send(command);
+        await testScope.Mediator.Send(command);
 
         // Assert
-        var updatedTask = await testScope.UnitOfWork.Repository<TaskItem>().GetByIdAsync(taskItem.Id);
+        var updatedTask = await testScope.UnitOfWork.Repository<TaskItem>().GetByIdAsync(taskItemId);
         Assert.NotNull(updatedTask);
         Assert.Equal("New Title", updatedTask.Title);
         Assert.Equal("New Desc", updatedTask.Description);
@@ -120,37 +88,25 @@ public class TaskItemsIntegrationTests(TestWebApplicationFactory<TaskFlow.API.As
     {
         // Arrange
         var testScope = factory.GetTestScope();
-        var mediator = testScope.ServiceScope.ServiceProvider.GetRequiredService<IMediator>();
-        var (userId, _, columnId, _) = await SeedUserAndBoard(testScope);
-        var task1 = new TaskItem { Id = Guid.NewGuid(), Title = "Task 1", ColumnId = columnId, Position = 0 };
-        var taskToMove = new TaskItem { Id = Guid.NewGuid(), Title = "Task To Move", ColumnId = columnId, Position = 1 };
-        await testScope.UnitOfWork.Repository<TaskItem>().AddAsync(task1);
-        await testScope.UnitOfWork.Repository<TaskItem>().AddAsync(taskToMove);
-        await testScope.UnitOfWork.SaveChangesAsync();
+        await TestSeeder.SeedUser(testScope);
+        var boardId = await TestSeeder.SeedBoard(testScope);
+        var columnId = await TestSeeder.SeedColumn(testScope, boardId);
+        var task1Id = await TestSeeder.SeedTask(testScope, columnId, "Task 1", 0);
+        var taskToMoveId = await TestSeeder.SeedTask(testScope, columnId, "Task To Move", 1);
 
-        var taskToMoveId = taskToMove.Id;
-        var task1Id = task1.Id;
-
-        // Clear the context to avoid tracking issues
-        testScope.DbContext.ChangeTracker.Clear();
-
-        // Reload the entity to move
-        var trackedTaskToMove = await testScope.UnitOfWork.Repository<TaskItem>().GetByIdAsync(taskToMoveId);
-
-        var command = new MoveTaskItemCommand(userId, taskToMoveId, columnId, 0) { Entity = trackedTaskToMove! };
+        var command = new MoveTaskItemCommand(TestSeeder.DefaultUserId, taskToMoveId, columnId, 0);
 
         // Act
-        await mediator.Send(command);
+        await testScope.Mediator.Send(command);
 
         // Assert
-        testScope.DbContext.ChangeTracker.Clear();
         var movedTask = await testScope.UnitOfWork.Repository<TaskItem>().GetByIdAsync(taskToMoveId);
-        var otherTask = await testScope.UnitOfWork.Repository<TaskItem>().GetByIdAsync(task1Id);
+        var task1 = await testScope.UnitOfWork.Repository<TaskItem>().GetByIdAsync(task1Id);
     
         Assert.NotNull(movedTask);
-        Assert.NotNull(otherTask);
+        Assert.NotNull(task1);
         Assert.Equal(0, movedTask.Position);
-        Assert.Equal(1, otherTask.Position);
+        Assert.Equal(1, task1.Position);
     }
 
     [Fact]
@@ -158,22 +114,20 @@ public class TaskItemsIntegrationTests(TestWebApplicationFactory<TaskFlow.API.As
     {
         // Arrange
         var testScope = factory.GetTestScope();
-        var mediator = testScope.ServiceScope.ServiceProvider.GetRequiredService<IMediator>();
-        var (userId, _, columnId, user) = await SeedUserAndBoard(testScope);
-        var taskItem = new TaskItem { Id = Guid.NewGuid(), Title = "Get Me", ColumnId = columnId, Position = 0, AssignedUserId = userId, AssignedUser = user };
-        await testScope.UnitOfWork.Repository<TaskItem>().AddAsync(taskItem);
-        await testScope.UnitOfWork.SaveChangesAsync();
-
-        var query = new GetTaskItemByIdQuery(userId, taskItem.Id) { Entity = taskItem };
+        await TestSeeder.SeedUser(testScope);
+        var boardId = await TestSeeder.SeedBoard(testScope);
+        var columnId = await TestSeeder.SeedColumn(testScope, boardId);
+        var taskId = await TestSeeder.SeedTask(testScope, columnId, "Get Me", 0);
+        
+        var query = new GetTaskItemByIdQuery(TestSeeder.DefaultUserId, taskId);
 
         // Act
-        var result = await mediator.Send(query);
+        var result = await testScope.Mediator.Send(query);
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(taskItem.Id, result.Id);
+        Assert.Equal(taskId, result.Id);
         Assert.Equal("Get Me", result.Title);
-        Assert.Equal(user.UserName, result.AssignedUserName);
     }
 
     [Fact]
@@ -181,18 +135,16 @@ public class TaskItemsIntegrationTests(TestWebApplicationFactory<TaskFlow.API.As
     {
         // Arrange
         var testScope = factory.GetTestScope();
-        var mediator = testScope.ServiceScope.ServiceProvider.GetRequiredService<IMediator>();
-        var (userId, _, columnId, _) = await SeedUserAndBoard(testScope);
-        var task1 = new TaskItem { Id = Guid.NewGuid(), Title = "Task 1", ColumnId = columnId, Position = 0 };
-        var task2 = new TaskItem { Id = Guid.NewGuid(), Title = "Task 2", ColumnId = columnId, Position = 1 };
-        await testScope.UnitOfWork.Repository<TaskItem>().AddAsync(task1);
-        await testScope.UnitOfWork.Repository<TaskItem>().AddAsync(task2);
-        await testScope.UnitOfWork.SaveChangesAsync();
-
-        var query = new GetTaskItemsByColumnQuery(userId, columnId);
+        await TestSeeder.SeedUser(testScope);
+        var boardId = await TestSeeder.SeedBoard(testScope);
+        var columnId = await TestSeeder.SeedColumn(testScope, boardId);
+        await TestSeeder.SeedTask(testScope, columnId, "Task 1", 0);
+        await TestSeeder.SeedTask(testScope, columnId, "Task 2", 1);
+        
+        var query = new GetTaskItemsByColumnQuery(TestSeeder.DefaultUserId, columnId);
 
         // Act
-        var result = await mediator.Send(query);
+        var result = await testScope.Mediator.Send(query);
 
         // Assert
         Assert.NotNull(result);

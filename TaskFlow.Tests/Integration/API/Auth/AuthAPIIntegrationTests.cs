@@ -4,20 +4,12 @@ using TaskFlow.Application.Auth.Commands;
 using TaskFlow.Application.Auth.DTO;
 using Xunit;
 
-namespace TaskFlow.Tests.Integration.API.Auth;
+namespace TaskFlow.Tests.API.Auth;
 
 [Collection("SequentialTests")]
 public class AuthAPIIntegrationTests(TestWebApplicationFactory<TaskFlow.API.AssemblyReference> factory)
     : IClassFixture<TestWebApplicationFactory<TaskFlow.API.AssemblyReference>>
 {
-    private static async Task<AuthResultDTO?> RegisterUser(HttpClient client, string email, string password)
-    {
-        var command = new RegisterUserCommand(email, "Tester", password);
-        var response = await client.PostAsJsonAsync("/api/auth/register", command);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<AuthResultDTO>();
-    }
-    
     [Fact]
     public async Task Register_Should_CreateUserAndReturnTokens()
     {
@@ -44,9 +36,9 @@ public class AuthAPIIntegrationTests(TestWebApplicationFactory<TaskFlow.API.Asse
     public async Task Login_Should_ReturnTokens_ForExistingUser()
     {
         // Arrange
-        factory.GetTestScope();
+        var testScope = factory.GetTestScope();
         var client = factory.CreateClient();
-        await RegisterUser(client, "test@test.com", "Password123!");
+        await TestSeeder.SeedUser(testScope, hashPassword: true);
         var command = new LoginUserCommand("test@test.com", "Password123!");
 
         // Act
@@ -64,10 +56,14 @@ public class AuthAPIIntegrationTests(TestWebApplicationFactory<TaskFlow.API.Asse
     public async Task Refresh_Should_ReturnNewTokens()
     {
         // Arrange
-        factory.GetTestScope();
+        var testScope = factory.GetTestScope();
         var client = factory.CreateClient();
-        var registrationResult = await RegisterUser(client, "test@test.com", "Password123!");
-        var command = new RefreshTokenCommand(registrationResult!.RefreshToken);
+        await TestSeeder.SeedUser(testScope, hashPassword: true);
+        var loginCommand = new LoginUserCommand("test@test.com", "Password123!");
+        var loginResponse = await client.PostAsJsonAsync("/api/auth/login", loginCommand);
+        var loginResult = await loginResponse.Content.ReadFromJsonAsync<AuthResultDTO>();
+        
+        var command = new RefreshTokenCommand(loginResult!.RefreshToken);
 
         // Act
         var response = await client.PostAsJsonAsync("/api/auth/refresh", command);
@@ -78,18 +74,17 @@ public class AuthAPIIntegrationTests(TestWebApplicationFactory<TaskFlow.API.Asse
         Assert.NotNull(authResult);
         Assert.False(string.IsNullOrEmpty(authResult.AccessToken));
         Assert.False(string.IsNullOrEmpty(authResult.RefreshToken));
-        Assert.NotEqual(registrationResult.RefreshToken, authResult.RefreshToken);
+        Assert.NotEqual(loginResult.RefreshToken, authResult.RefreshToken);
     }
 
     [Fact]
     public async Task Register_Should_ReturnConflict_WhenEmailExists()
     {
         // Arrange
-        factory.GetTestScope();
+        var testScope = factory.GetTestScope();
         var client = factory.CreateClient();
-        var email = "test@test.com";
-        await RegisterUser(client, email, "Password123!");
-        var command = new RegisterUserCommand(email, "AnotherUser", "Password123!");
+        await TestSeeder.SeedUser(testScope, hashPassword: true);
+        var command = new RegisterUserCommand("test@test.com", "OtherUser", "Password123!");
 
         // Act
         var response = await client.PostAsJsonAsync("/api/auth/register", command);
@@ -102,9 +97,9 @@ public class AuthAPIIntegrationTests(TestWebApplicationFactory<TaskFlow.API.Asse
     public async Task Login_Should_ReturnUnauthorized_ForInvalidCredentials()
     {
         // Arrange
-        factory.GetTestScope();
+        var testScope = factory.GetTestScope();
         var client = factory.CreateClient();
-        await RegisterUser(client, "test@test.com", "Password123!");
+        await TestSeeder.SeedUser(testScope, hashPassword: true);
         var command = new LoginUserCommand("test@test.com", "WrongPassword!");
 
         // Act

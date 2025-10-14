@@ -1,51 +1,34 @@
-using MediatR;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using TaskFlow.Application.Boards.Commands;
 using TaskFlow.Application.Boards.Queries;
 using TaskFlow.Application.Common.Exceptions;
 using TaskFlow.Domain.Entities;
 using TaskFlow.Domain.Enums;
-using TaskFlow.Infrastructure.Data;
 using Xunit;
 
-namespace TaskFlow.Tests.Integration.Application.Boards;
+namespace TaskFlow.Tests.Application.Boards;
 
 [Collection("SequentialTests")]
 public class BoardsIntegrationTests(TestWebApplicationFactory<TaskFlow.API.AssemblyReference> factory)
     : IClassFixture<TestWebApplicationFactory<TaskFlow.API.AssemblyReference>>
 {
-    private readonly Guid _userId = Guid.Parse(TestAuthHandler.UserId);
-
-    private async Task SeedUser(TaskFlowDbContext context)
-    {
-        if (!await context.Users.AnyAsync(u => u.Id == _userId))
-        {
-            context.Users.Add(new User { Id = _userId, Email = "test@test.com", UserName = "Tester", Role = UserRole.User, PasswordHash = "hash"});
-            await context.SaveChangesAsync();
-        }
-    }
-    
     [Fact]
     public async Task CreateBoardCommand_WritesToDatabase()
     {
         // Arrange
-        var scope = factory.GetTestScope();
-        var mediator = scope.ServiceScope.ServiceProvider.GetRequiredService<IMediator>();
-        await SeedUser(scope.DbContext);
-        var command = new CreateBoardCommand(_userId, "Integration", true);
+        var testScope = factory.GetTestScope();
+        await TestSeeder.SeedUser(testScope);
+        var command = new CreateBoardCommand(TestSeeder.DefaultUserId, "Integration", true);
 
         // Act
-        var boardId = await mediator.Send(command);
+        var boardId = await testScope.Mediator.Send(command);
 
         // Assert
-        var board = await scope.DbContext.Boards.FindAsync(boardId);
+        var board = await testScope.UnitOfWork.Repository<Board>().GetByIdAsync(boardId);
         Assert.NotNull(board);
         Assert.Equal("Integration", board.Name);
         Assert.True(board.IsPublic);
 
-        var userBoard = await scope.DbContext.UserBoards
-            .FirstOrDefaultAsync(ub => ub.BoardId == boardId && ub.UserId == _userId);
+        var userBoard = await testScope.UnitOfWork.Repository<UserBoard>().GetByIdAsync(TestSeeder.DefaultUserId, boardId);
         Assert.NotNull(userBoard);
         Assert.Equal(BoardRole.Owner, userBoard.BoardRole);
     }
@@ -54,48 +37,36 @@ public class BoardsIntegrationTests(TestWebApplicationFactory<TaskFlow.API.Assem
     public async Task GetBoardsQuery_ReturnsOnlyUserMemberBoards()
     {
         // Arrange
-        var scope = factory.GetTestScope();
-        var mediator = scope.ServiceScope.ServiceProvider.GetRequiredService<IMediator>();
-        var otherUserId = Guid.NewGuid();
+        var testScope = factory.GetTestScope();
         
-        await SeedUser(scope.DbContext);
-        scope.DbContext.Users.Add(new User { Id = otherUserId, Email = "other@test.com", UserName = "OtherTester", Role = UserRole.User, PasswordHash = "hash"});
+        await TestSeeder.SeedUser(testScope);
+        var otherUser = await TestSeeder.SeedUser(testScope, Guid.NewGuid(), "othertest@test.com", "OtherTester");
+        var board1Id = await TestSeeder.SeedBoard(testScope, TestSeeder.DefaultUserId, "Board1", true, BoardRole.Owner);
+        var board2Id = await TestSeeder.SeedBoard(testScope, TestSeeder.DefaultUserId, "Board2", false, BoardRole.Editor);
+        await TestSeeder.SeedBoard(testScope, otherUser.Id, "Board3", false, BoardRole.Owner);
 
-        var board1 = new Board { Id = Guid.NewGuid(), Name = "Board1", IsPublic = true };
-        var board2 = new Board { Id = Guid.NewGuid(), Name = "Board2", IsPublic = false };
-        var board3 = new Board { Id = Guid.NewGuid(), Name = "Board3", IsPublic = false };
-
-        scope.DbContext.Boards.AddRange(board1, board2, board3);
-        scope.DbContext.UserBoards.AddRange(
-            new UserBoard { UserId = _userId, BoardId = board1.Id, BoardRole = BoardRole.Owner },
-            new UserBoard { UserId = _userId, BoardId = board2.Id, BoardRole = BoardRole.Editor },
-            new UserBoard { UserId = otherUserId, BoardId = board3.Id, BoardRole = BoardRole.Owner }
-        );
-        await scope.DbContext.SaveChangesAsync();
-
-        var query = new GetBoardsQuery(_userId);
+        var query = new GetBoardsQuery(TestSeeder.DefaultUserId);
 
         // Act
-        var result = await mediator.Send(query);
+        var result = await testScope.Mediator.Send(query);
 
         // Assert
         Assert.NotNull(result);
         Assert.Equal(2, result.Count);
-        Assert.Contains(result, b => b.Id == board1.Id);
-        Assert.Contains(result, b => b.Id == board2.Id);
+        Assert.Contains(result, b => b.Id == board1Id);
+        Assert.Contains(result, b => b.Id == board2Id);
     }
 
     [Fact]
     public async Task GetBoardsQuery_ReturnsEmptyListWhenNoBoardsExist()
     {
         // Arrange
-        var scope = factory.GetTestScope();
-        var mediator = scope.ServiceScope.ServiceProvider.GetRequiredService<IMediator>();
-        await SeedUser(scope.DbContext);
-        var query = new GetBoardsQuery(_userId);
+        var testScope = factory.GetTestScope();
+        await TestSeeder.SeedUser(testScope);
+        var query = new GetBoardsQuery(TestSeeder.DefaultUserId);
 
         // Act
-        var result = await mediator.Send(query);
+        var result = await testScope.Mediator.Send(query);
 
         // Assert
         Assert.NotNull(result);
@@ -106,22 +77,18 @@ public class BoardsIntegrationTests(TestWebApplicationFactory<TaskFlow.API.Assem
     public async Task UpdateBoardCommand_UpdatesDatabase()
     {
         // Arrange
-        var scope = factory.GetTestScope();
-        var mediator = scope.ServiceScope.ServiceProvider.GetRequiredService<IMediator>();
-        await SeedUser(scope.DbContext);
+        var testScope = factory.GetTestScope();
+        await TestSeeder.SeedUser(testScope);
+        var boardId = await TestSeeder.SeedBoard(testScope, TestSeeder.DefaultUserId, "Old Name", false, BoardRole.Owner);
+        await testScope.UnitOfWork.SaveChangesAsync();
 
-        var boardId = Guid.NewGuid();
-        scope.DbContext.Boards.Add(new Board { Id = boardId, Name = "Old Name", IsPublic = true });
-        scope.DbContext.UserBoards.Add(new UserBoard { UserId = _userId, BoardId = boardId, BoardRole = BoardRole.Owner });
-        await scope.DbContext.SaveChangesAsync();
-
-        var command = new UpdateBoardCommand(_userId, boardId, "New Name", false);
+        var command = new UpdateBoardCommand(TestSeeder.DefaultUserId, boardId, "New Name", false);
 
         // Act
-        await mediator.Send(command);
+        await testScope.Mediator.Send(command);
 
         // Assert
-        var board = await scope.DbContext.Boards.FindAsync(boardId);
+        var board = await testScope.UnitOfWork.Repository<Board>().GetByIdAsync(boardId);
         Assert.NotNull(board);
         Assert.Equal("New Name", board.Name);
         Assert.False(board.IsPublic);
@@ -131,22 +98,18 @@ public class BoardsIntegrationTests(TestWebApplicationFactory<TaskFlow.API.Assem
     public async Task DeleteBoardCommand_RemovesFromDatabase()
     {
         // Arrange
-        var scope = factory.GetTestScope();
-        var mediator = scope.ServiceScope.ServiceProvider.GetRequiredService<IMediator>();
-        await SeedUser(scope.DbContext);
+        var testScope = factory.GetTestScope();
+        await TestSeeder.SeedUser(testScope);
+        var boardId = await TestSeeder.SeedBoard(testScope, TestSeeder.DefaultUserId, "To Delete", false, BoardRole.Owner);
+        await testScope.UnitOfWork.SaveChangesAsync();
 
-        var boardId = Guid.NewGuid();
-        scope.DbContext.Boards.Add(new Board { Id = boardId, Name = "To Delete", IsPublic = true });
-        scope.DbContext.UserBoards.Add(new UserBoard { UserId = _userId, BoardId = boardId, BoardRole = BoardRole.Owner });
-        await scope.DbContext.SaveChangesAsync();
-
-        var command = new DeleteBoardCommand(_userId, boardId);
+        var command = new DeleteBoardCommand(TestSeeder.DefaultUserId, boardId);
 
         // Act
-        await mediator.Send(command);
+        await testScope.Mediator.Send(command);
 
         // Assert
-        var board = await scope.DbContext.Boards.FindAsync(boardId);
+        var board = await testScope.UnitOfWork.Repository<Board>().GetByIdAsync(boardId);
         Assert.Null(board);
     }
 
@@ -154,19 +117,15 @@ public class BoardsIntegrationTests(TestWebApplicationFactory<TaskFlow.API.Assem
     public async Task GetBoardByIdQuery_ReturnsCorrectBoard()
     {
         // Arrange
-        var scope = factory.GetTestScope();
-        var mediator = scope.ServiceScope.ServiceProvider.GetRequiredService<IMediator>();
-        await SeedUser(scope.DbContext);
+        var testScope = factory.GetTestScope();
+        await TestSeeder.SeedUser(testScope);
+        var boardId = await TestSeeder.SeedBoard(testScope, TestSeeder.DefaultUserId, "Test Board", false, BoardRole.Viewer);
+        await testScope.UnitOfWork.SaveChangesAsync();
 
-        var boardId = Guid.NewGuid();
-        scope.DbContext.Boards.Add(new Board { Id = boardId, Name = "Test Board", IsPublic = true });
-        scope.DbContext.UserBoards.Add(new UserBoard { UserId = _userId, BoardId = boardId, BoardRole = BoardRole.Viewer });
-        await scope.DbContext.SaveChangesAsync();
-
-        var query = new GetBoardByIdQuery(_userId, boardId);
+        var query = new GetBoardByIdQuery(TestSeeder.DefaultUserId, boardId);
 
         // Act
-        var result = await mediator.Send(query);
+        var result = await testScope.Mediator.Send(query);
 
         // Assert
         Assert.NotNull(result);
@@ -178,33 +137,28 @@ public class BoardsIntegrationTests(TestWebApplicationFactory<TaskFlow.API.Assem
     public async Task GetBoardByIdQuery_ThrowsNotFoundException_WhenBoardDoesNotExist()
     {
         // Arrange
-        var scope = factory.GetTestScope();
-        var mediator = scope.ServiceScope.ServiceProvider.GetRequiredService<IMediator>();
-        await SeedUser(scope.DbContext);
-        var query = new GetBoardByIdQuery(_userId, Guid.NewGuid());
+        var testScope = factory.GetTestScope();
+        await TestSeeder.SeedUser(testScope);
+        var query = new GetBoardByIdQuery(TestSeeder.DefaultUserId, Guid.NewGuid());
 
         // Act
         // Assert
-        await Assert.ThrowsAsync<NotFoundException>(() => mediator.Send(query));
+        await Assert.ThrowsAsync<NotFoundException>(() => testScope.Mediator.Send(query));
     }
     
     [Fact]
     public async Task UpdateBoardCommand_ThrowsForbiddenException_WhenUserIsNotOwner()
     {
         // Arrange
-        var scope = factory.GetTestScope();
-        var mediator = scope.ServiceScope.ServiceProvider.GetRequiredService<IMediator>();
-        await SeedUser(scope.DbContext);
+        var testScope = factory.GetTestScope();
+        await TestSeeder.SeedUser(testScope);
+        var boardId = await TestSeeder.SeedBoard(testScope, TestSeeder.DefaultUserId, "Old Name", false, BoardRole.Editor);
+        await testScope.UnitOfWork.SaveChangesAsync();
 
-        var boardId = Guid.NewGuid();
-        scope.DbContext.Boards.Add(new Board { Id = boardId, Name = "Old Name", IsPublic = false });
-        scope.DbContext.UserBoards.Add(new UserBoard { UserId = _userId, BoardId = boardId, BoardRole = BoardRole.Editor });
-        await scope.DbContext.SaveChangesAsync();
-
-        var command = new UpdateBoardCommand(_userId, boardId, "New Name", true);
+        var command = new UpdateBoardCommand(TestSeeder.DefaultUserId, boardId, "New Name", true);
 
         // Act
         // Assert
-        await Assert.ThrowsAsync<ForbiddenAccessException>(() => mediator.Send(command));
+        await Assert.ThrowsAsync<ForbiddenAccessException>(() => testScope.Mediator.Send(command));
     }
 }

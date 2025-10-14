@@ -14,19 +14,13 @@ namespace TaskFlow.Tests.Unit.Application.Boards;
 
 public class BoardsHandlersTests
 {
-    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
-    private readonly Mock<IMapper> _mapperMock;
-    private readonly Mock<IRepository<Board>> _boardRepositoryMock;
-    private readonly Mock<IRepository<UserBoard>> _userBoardRepositoryMock;
-    private readonly Guid _userId = Guid.NewGuid();
+    private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
+    private readonly Mock<IMapper> _mapperMock = new();
+    private readonly Mock<IRepository<Board>> _boardRepositoryMock = new();
+    private readonly Mock<IRepository<UserBoard>> _userBoardRepositoryMock = new();
 
     public BoardsHandlersTests()
     {
-        _unitOfWorkMock = new Mock<IUnitOfWork>();
-        _mapperMock = new Mock<IMapper>();
-        _boardRepositoryMock = new Mock<IRepository<Board>>();
-        _userBoardRepositoryMock = new Mock<IRepository<UserBoard>>();
-
         _unitOfWorkMock.Setup(uow => uow.Repository<Board>()).Returns(_boardRepositoryMock.Object);
         _unitOfWorkMock.Setup(uow => uow.Repository<UserBoard>()).Returns(_userBoardRepositoryMock.Object);
     }
@@ -36,7 +30,7 @@ public class BoardsHandlersTests
     {
         // Arrange
         var handler = new CreateBoardHandler(_unitOfWorkMock.Object);
-        var command = new CreateBoardCommand(_userId, "Test Board", true);
+        var command = new CreateBoardCommand(TestSeeder.DefaultUserId, "Test Board", true);
 
         // Act
         var boardId = await handler.Handle(command, CancellationToken.None);
@@ -56,8 +50,8 @@ public class BoardsHandlersTests
         var boardId2 = Guid.NewGuid();
         var userBoards = new List<UserBoard>
         {
-            new() { UserId = _userId, BoardId = boardId1 },
-            new() { UserId = _userId, BoardId = boardId2 }
+            new() { UserId = TestSeeder.DefaultUserId, BoardId = boardId1, BoardRole = BoardRole.Owner},
+            new() { UserId = TestSeeder.DefaultUserId, BoardId = boardId2 , BoardRole = BoardRole.Editor}
         };
         var boards = new List<Board>
         {
@@ -77,7 +71,7 @@ public class BoardsHandlersTests
         _mapperMock.Setup(m => m.Map<IReadOnlyList<BoardDTO>>(boards)).Returns(boardDTOs);
 
         var handler = new GetBoardsHandler(_unitOfWorkMock.Object, _mapperMock.Object);
-        var query = new GetBoardsQuery(_userId);
+        var query = new GetBoardsQuery(TestSeeder.DefaultUserId);
 
         // Act
         var result = await handler.Handle(query, CancellationToken.None);
@@ -98,7 +92,7 @@ public class BoardsHandlersTests
         _mapperMock.Setup(m => m.Map<BoardDTO>(board)).Returns(boardDTO);
 
         var handler = new GetBoardByIdHandler(_unitOfWorkMock.Object, _mapperMock.Object);
-        var query = new GetBoardByIdQuery(_userId, boardId) { Board = board };
+        var query = new GetBoardByIdQuery(TestSeeder.DefaultUserId, boardId) { Board = board };
 
         // Act
         var result = await handler.Handle(query, CancellationToken.None);
@@ -116,7 +110,7 @@ public class BoardsHandlersTests
         var boardId = Guid.NewGuid();
         var board = new Board { Id = boardId, Name = "Old Name", IsPublic = true };
         var handler = new UpdateBoardHandler(_unitOfWorkMock.Object);
-        var command = new UpdateBoardCommand(_userId, boardId, "New Name", false) { Board = board };
+        var command = new UpdateBoardCommand(TestSeeder.DefaultUserId, boardId, "New Name", false) { Board = board };
 
         // Act
         await handler.Handle(command, CancellationToken.None);
@@ -133,7 +127,7 @@ public class BoardsHandlersTests
         var boardId = Guid.NewGuid();
         var board = new Board { Id = boardId, Name = "To Delete" };
         var handler = new DeleteBoardHandler(_unitOfWorkMock.Object);
-        var command = new DeleteBoardCommand(_userId, boardId) { Board = board };
+        var command = new DeleteBoardCommand(TestSeeder.DefaultUserId, boardId) { Board = board };
 
         // Act
         await handler.Handle(command, CancellationToken.None);

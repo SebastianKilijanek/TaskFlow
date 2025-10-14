@@ -13,17 +13,12 @@ namespace TaskFlow.Tests.Unit.Application.Columns;
 
 public class ColumnsHandlersTests
 {
-    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
-    private readonly Mock<IMapper> _mapperMock;
-    private readonly Mock<IRepository<Column>> _columnRepositoryMock;
-    private readonly Guid _userId = Guid.NewGuid();
+    private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
+    private readonly Mock<IMapper> _mapperMock = new();
+    private readonly Mock<IRepository<Column>> _columnRepositoryMock = new();
 
     public ColumnsHandlersTests()
     {
-        _unitOfWorkMock = new Mock<IUnitOfWork>();
-        _mapperMock = new Mock<IMapper>();
-        _columnRepositoryMock = new Mock<IRepository<Column>>();
-
         _unitOfWorkMock.Setup(uow => uow.Repository<Column>()).Returns(_columnRepositoryMock.Object);
     }
 
@@ -38,7 +33,7 @@ public class ColumnsHandlersTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingColumns);
         var handler = new CreateColumnHandler(_unitOfWorkMock.Object);
-        var command = new CreateColumnCommand(_userId, "Test Column", boardId);
+        var command = new CreateColumnCommand(TestSeeder.DefaultUserId, "Test Column", boardId);
 
         // Act
         var columnId = await handler.Handle(command, CancellationToken.None);
@@ -68,7 +63,7 @@ public class ColumnsHandlersTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(remainingColumns);
         var handler = new DeleteColumnHandler(_unitOfWorkMock.Object);
-        var command = new DeleteColumnCommand(_userId, columnToDelete.Id) { Entity = columnToDelete };
+        var command = new DeleteColumnCommand(TestSeeder.DefaultUserId, columnToDelete.Id) { Entity = columnToDelete };
 
         // Act
         await handler.Handle(command, CancellationToken.None);
@@ -90,7 +85,7 @@ public class ColumnsHandlersTests
         var columnDTO = new ColumnDTO { Id = columnId, BoardId = boardId, Name = "Test Column" };
         _mapperMock.Setup(m => m.Map<ColumnDTO>(column)).Returns(columnDTO);
         var handler = new GetColumnByIdHandler(_mapperMock.Object);
-        var query = new GetColumnByIdQuery(_userId, columnId) { Entity = column };
+        var query = new GetColumnByIdQuery(TestSeeder.DefaultUserId, columnId) { Entity = column };
 
         // Act
         var result = await handler.Handle(query, CancellationToken.None);
@@ -125,7 +120,7 @@ public class ColumnsHandlersTests
         _mapperMock.Setup(m => m.Map<ColumnDTO>(columns[1])).Returns(columnDTOs[1]);
 
         var handler = new GetColumnsByBoardHandler(_unitOfWorkMock.Object, _mapperMock.Object);
-        var query = new GetColumnsByBoardQuery(_userId, boardId);
+        var query = new GetColumnsByBoardQuery(TestSeeder.DefaultUserId, boardId);
 
         // Act
         var result = await handler.Handle(query, CancellationToken.None);
@@ -153,7 +148,7 @@ public class ColumnsHandlersTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(otherColumns);
         var handler = new MoveColumnHandler(_unitOfWorkMock.Object);
-        var command = new MoveColumnCommand(_userId, columnToMove.Id, 2) { Entity = columnToMove };
+        var command = new MoveColumnCommand(TestSeeder.DefaultUserId, columnToMove.Id, 2) { Entity = columnToMove };
 
         // Act
         await handler.Handle(command, CancellationToken.None);
@@ -171,7 +166,7 @@ public class ColumnsHandlersTests
         var columnId = Guid.NewGuid();
         var column = new Column { Id = columnId, Name = "Old Name", BoardId = boardId};
         var handler = new UpdateColumnHandler(_unitOfWorkMock.Object);
-        var command = new UpdateColumnCommand(_userId, columnId, "New Name") { Entity = column };
+        var command = new UpdateColumnCommand(TestSeeder.DefaultUserId, columnId, "New Name") { Entity = column };
 
         // Act
         await handler.Handle(command, CancellationToken.None);

@@ -1,65 +1,27 @@
 using System.Net;
 using System.Net.Http.Json;
-using TaskFlow.Application.Boards.DTO;
-using TaskFlow.Application.Columns.DTO;
 using TaskFlow.Application.TaskItems.DTO;
 using TaskFlow.Domain.Entities;
+using TaskFlow.Domain.Enums;
 using Xunit;
 
-namespace TaskFlow.Tests.Integration.API.TaskItems;
+namespace TaskFlow.Tests.API.TaskItems;
 
 [Collection("SequentialTests")]
 public class TaskItemsAPIIntegrationTests(TestWebApplicationFactory<TaskFlow.API.AssemblyReference> factory)
     : IClassFixture<TestWebApplicationFactory<TaskFlow.API.AssemblyReference>>
 {
-    private const string BOARDS_BASE_URL = "/api/v1/boards";
-    private const string COLUMNS_BASE_URL = "/api/columns";
     private const string TASKS_BASE_URL = "/api/taskitems";
-    private readonly Guid _userId = Guid.Parse(TestAuthHandler.UserId);
-
-    private async Task SeedUser(TestScope scope)
-    {
-        var user = new User { Id = _userId, Email = "test@test.com", UserName = "Tester", PasswordHash = "hash"};
-        await scope.DbContext.Users.AddAsync(user);
-        await scope.DbContext.SaveChangesAsync();
-    }
-    
-    private async Task<Guid> CreateTestBoard(HttpClient client, string name = "Test Board")
-    {
-        var payload = new CreateBoardDTO { Name = name, IsPublic = false };
-        var response = await client.PostAsJsonAsync(BOARDS_BASE_URL, payload);
-        response.EnsureSuccessStatusCode();
-        var location = response.Headers.Location;
-        return Guid.Parse(location!.Segments.Last());
-    }
-
-    private async Task<Guid> CreateTestColumn(HttpClient client, Guid boardId, string name = "Test Column")
-    {
-        var payload = new CreateColumnDTO { Name = name, BoardId = boardId };
-        var response = await client.PostAsJsonAsync(COLUMNS_BASE_URL, payload);
-        response.EnsureSuccessStatusCode();
-        var location = response.Headers.Location;
-        return Guid.Parse(location!.Segments.Last());
-    }
-
-    private async Task<Guid> CreateTestTask(HttpClient client, Guid columnId, string title = "Test Task")
-    {
-        var payload = new CreateTaskItemDTO { Title = title, Description = "Test Description", ColumnId = columnId };
-        var response = await client.PostAsJsonAsync(TASKS_BASE_URL, payload);
-        response.EnsureSuccessStatusCode();
-        var location = response.Headers.Location;
-        return Guid.Parse(location!.Segments.Last());
-    }
 
     [Fact]
     public async Task Post_CreateTaskItem_Returns201()
     {
         // Arrange
         var testScope = factory.GetTestScope();
-        await SeedUser(testScope);
+        await TestSeeder.SeedUser(testScope);
         var client = factory.CreateClientWithClaims();
-        var boardId = await CreateTestBoard(client);
-        var columnId = await CreateTestColumn(client, boardId);
+        var boardId = await TestSeeder.SeedBoard(testScope);
+        var columnId = await TestSeeder.SeedColumn(testScope, boardId);
         var payload = new CreateTaskItemDTO { Title = "New API Task", Description = "From API test", ColumnId = columnId };
 
         // Act
@@ -70,7 +32,7 @@ public class TaskItemsAPIIntegrationTests(TestWebApplicationFactory<TaskFlow.API
         var location = response.Headers.Location;
         Assert.NotNull(location);
         var taskId = Guid.Parse(location.Segments.Last());
-        var task = await testScope.DbContext.TaskItems.FindAsync(taskId);
+        var task = await testScope.UnitOfWork.Repository<TaskItem>().GetByIdAsync(taskId);
         Assert.NotNull(task);
         Assert.Equal("New API Task", task.Title);
         Assert.Equal(0, task.Position);
@@ -81,11 +43,11 @@ public class TaskItemsAPIIntegrationTests(TestWebApplicationFactory<TaskFlow.API
     {
         // Arrange
         var testScope = factory.GetTestScope();
-        await SeedUser(testScope);
+        await TestSeeder.SeedUser(testScope);
         var client = factory.CreateClientWithClaims();
-        var boardId = await CreateTestBoard(client);
-        var columnId = await CreateTestColumn(client, boardId);
-        var taskId = await CreateTestTask(client, columnId);
+        var boardId = await TestSeeder.SeedBoard(testScope);
+        var columnId = await TestSeeder.SeedColumn(testScope, boardId);
+        var taskId = await TestSeeder.SeedTask(testScope, columnId);
 
         // Act
         var response = await client.GetAsync($"{TASKS_BASE_URL}/{taskId}");
@@ -102,12 +64,12 @@ public class TaskItemsAPIIntegrationTests(TestWebApplicationFactory<TaskFlow.API
     {
         // Arrange
         var testScope = factory.GetTestScope();
-        await SeedUser(testScope);
+        await TestSeeder.SeedUser(testScope);
         var client = factory.CreateClientWithClaims();
-        var boardId = await CreateTestBoard(client);
-        var columnId = await CreateTestColumn(client, boardId);
-        await CreateTestTask(client, columnId, "Task 1");
-        await CreateTestTask(client, columnId, "Task 2");
+        var boardId = await TestSeeder.SeedBoard(testScope);
+        var columnId = await TestSeeder.SeedColumn(testScope, boardId);
+        await TestSeeder.SeedTask(testScope, columnId, "Task 1");
+        await TestSeeder.SeedTask(testScope, columnId, "Task 2");
 
         // Act
         var response = await client.GetAsync($"{TASKS_BASE_URL}/column/{columnId}");
@@ -124,22 +86,25 @@ public class TaskItemsAPIIntegrationTests(TestWebApplicationFactory<TaskFlow.API
     {
         // Arrange
         var testScope = factory.GetTestScope();
-        await SeedUser(testScope);
+        await TestSeeder.SeedUser(testScope);
         var client = factory.CreateClientWithClaims();
-        var boardId = await CreateTestBoard(client);
-        var columnId = await CreateTestColumn(client, boardId);
-        var taskId = await CreateTestTask(client, columnId);
-        var payload = new UpdateTaskItemDTO { Title = "New Title", Description = "New Desc", Status = 1 };
+        var boardId = await TestSeeder.SeedBoard(testScope);
+        var columnId = await TestSeeder.SeedColumn(testScope, boardId);
+        var taskId = await TestSeeder.SeedTask(testScope, columnId);
+        var payload = new UpdateTaskItemDTO { Title = "New Title", Description = "New Desc", Status = (int)TaskItemStatus.InProgress };
 
+        testScope.DbContext.ChangeTracker.Clear();
+        
         // Act
         var response = await client.PutAsJsonAsync($"{TASKS_BASE_URL}/{taskId}", payload);
 
         // Assert
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
-        var updatedTask = await testScope.DbContext.TaskItems.FindAsync(taskId);
+        var updatedTask = await testScope.UnitOfWork.Repository<TaskItem>().GetByIdAsync(taskId);
         Assert.NotNull(updatedTask);
         Assert.Equal("New Title", updatedTask.Title);
         Assert.Equal("New Desc", updatedTask.Description);
+        Assert.Equal(TaskItemStatus.InProgress, updatedTask.Status);
     }
 
     [Fact]
@@ -147,18 +112,20 @@ public class TaskItemsAPIIntegrationTests(TestWebApplicationFactory<TaskFlow.API
     {
         // Arrange
         var testScope = factory.GetTestScope();
-        await SeedUser(testScope);
+        await TestSeeder.SeedUser(testScope);
         var client = factory.CreateClientWithClaims();
-        var boardId = await CreateTestBoard(client);
-        var columnId = await CreateTestColumn(client, boardId);
-        var taskId = await CreateTestTask(client, columnId);
+        var boardId = await TestSeeder.SeedBoard(testScope);
+        var columnId = await TestSeeder.SeedColumn(testScope, boardId);
+        var taskId = await TestSeeder.SeedTask(testScope, columnId);
 
+        testScope.DbContext.ChangeTracker.Clear();
+        
         // Act
         var response = await client.DeleteAsync($"{TASKS_BASE_URL}/{taskId}");
 
         // Assert
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
-        var deletedTask = await testScope.DbContext.TaskItems.FindAsync(taskId);
+        var deletedTask = await testScope.UnitOfWork.Repository<TaskItem>().GetByIdAsync(taskId);
         Assert.Null(deletedTask);
     }
 
@@ -167,21 +134,23 @@ public class TaskItemsAPIIntegrationTests(TestWebApplicationFactory<TaskFlow.API
     {
         // Arrange
         var testScope = factory.GetTestScope();
-        await SeedUser(testScope);
+        await TestSeeder.SeedUser(testScope);
         var client = factory.CreateClientWithClaims();
-        var boardId = await CreateTestBoard(client);
-        var column1Id = await CreateTestColumn(client, boardId, "Column 1");
-        var column2Id = await CreateTestColumn(client, boardId, "Column 2");
-        var taskToMoveId = await CreateTestTask(client, column1Id);
-        await CreateTestTask(client, column1Id, "Other Task");
+        var boardId = await TestSeeder.SeedBoard(testScope);
+        var column1Id = await TestSeeder.SeedColumn(testScope, boardId, "Column 1", 0);
+        var column2Id = await TestSeeder.SeedColumn(testScope, boardId, "Column 2", 1);
+        var taskToMoveId = await TestSeeder.SeedTask(testScope, column1Id, "Task To Move", 0);
+        await TestSeeder.SeedTask(testScope, column1Id, "Other Task", 1);
         var payload = new MoveTaskItemDTO { NewColumnId = column2Id, NewPosition = 0 };
 
+        testScope.DbContext.ChangeTracker.Clear();
+        
         // Act
         var response = await client.PostAsJsonAsync($"{TASKS_BASE_URL}/{taskToMoveId}/move", payload);
 
         // Assert
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
-        var movedTask = await testScope.DbContext.TaskItems.FindAsync(taskToMoveId);
+        var movedTask = await testScope.UnitOfWork.Repository<TaskItem>().GetByIdAsync(taskToMoveId);
         Assert.NotNull(movedTask);
         Assert.Equal(column2Id, movedTask.ColumnId);
         Assert.Equal(0, movedTask.Position);

@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using AutoMapper;
+using MediatR;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
@@ -17,11 +18,10 @@ using TaskFlow.Domain.Interfaces;
 using TaskFlow.Infrastructure.Auth;
 using TaskFlow.Infrastructure.Data;
 using TaskFlow.Infrastructure.Repositories;
-using TaskFlow.Infrastructure.Services;
 
 namespace TaskFlow.Tests;
 
-public record TestScope(IServiceScope ServiceScope, TaskFlowDbContext DbContext, IUnitOfWork UnitOfWork, IMapper Mapper);
+public record TestScope(IServiceScope ServiceScope, TaskFlowDbContext DbContext, IUnitOfWork UnitOfWork, IMapper Mapper, IMediator Mediator);
 
 public class TestWebApplicationFactory<T> : WebApplicationFactory<T> where T : class
 {
@@ -76,7 +76,7 @@ public class TestWebApplicationFactory<T> : WebApplicationFactory<T> where T : c
                 options.From = "";
                 options.EnableSsl = true;
             });
-            services.AddScoped<IEmailService, EmailService>();
+            services.AddScoped<IEmailService, TestEmailService>();
             
             services.AddControllers();
         });
@@ -89,11 +89,12 @@ public class TestWebApplicationFactory<T> : WebApplicationFactory<T> where T : c
         var context = serviceScope.ServiceProvider.GetRequiredService<TaskFlowDbContext>();
         var unitOfWork = serviceScope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var mapper = serviceScope.ServiceProvider.GetRequiredService<IMapper>();
+        var mediator = serviceScope.ServiceProvider.GetRequiredService<IMediator>();
         
         context.Database.EnsureDeleted();
         context.Database.EnsureCreated();
         
-        return new TestScope(serviceScope, context, unitOfWork, mapper);
+        return new TestScope(serviceScope, context, unitOfWork, mapper, mediator);
     }
     
     public HttpClient CreateClientWithClaims(params Claim[] claims)
