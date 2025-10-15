@@ -5,7 +5,7 @@ using TaskFlow.Application.Columns.DTO;
 using TaskFlow.Application.Users.DTO;
 using TaskFlow.Application.TaskItems.DTO;
 using TaskFlow.Application.Comments.DTO;
-using TaskFlow.Domain.Enums;
+using TaskFlow.Application.UserBoards.DTO;
 
 namespace TaskFlow.Application.Common.Mapping;
 
@@ -14,10 +14,8 @@ public class MappingProfile : Profile
     public MappingProfile()
     {
         // User
-        CreateMap<User, UserDTO>()
-            .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.ToString()));
-        CreateMap<UserDTO, User>()
-            .ForMember(dest => dest.Role, opt => opt.MapFrom(src => Enum.Parse<UserRole>(src.Role)));
+        CreateMap<User, UserDTO>();
+        CreateMap<UserDTO, User>();
 
         // Board
         CreateMap<Board, BoardDTO>();

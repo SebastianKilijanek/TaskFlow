@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskFlow.Application.Users.Commands;
+using TaskFlow.Application.Users.DTO;
 using TaskFlow.Application.Users.Queries;
 
 namespace TaskFlow.API.Controllers;
@@ -19,16 +20,16 @@ public class UsersController(IMediator mediator) : ControllerBase
     }
 
     [HttpPut("me/change-password")]
-    public async Task<IActionResult> ChangePassword([FromBody] ChangeUserPasswordCommand request, CancellationToken cancellationToken)
+    public async Task<IActionResult> ChangePassword([FromBody] ChangeUserPasswordDTO dto, CancellationToken cancellationToken)
     {
-        await mediator.Send(request with { UserId = User.GetUserId() }, cancellationToken);
+        await mediator.Send(new ChangeUserPasswordCommand(User.GetUserId(), dto.CurrentPassword, dto.NewPassword), cancellationToken);
         return NoContent();
     }
 
     [HttpPut("me/change-email")]
-    public async Task<IActionResult> ChangeEmail([FromBody] ChangeUserEmailCommand request, CancellationToken cancellationToken)
+    public async Task<IActionResult> ChangeEmail([FromBody] ChangeUserEmailDTO dto, CancellationToken cancellationToken)
     {
-        await mediator.Send(request with { UserId = User.GetUserId() }, cancellationToken);
+        await mediator.Send(new ChangeUserEmailCommand(User.GetUserId(), dto.NewEmail), cancellationToken);
         return NoContent();
     }
 
@@ -50,9 +51,9 @@ public class UsersController(IMediator mediator) : ControllerBase
 
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserCommand command, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserDTO dto, CancellationToken cancellationToken)
     {
-        await mediator.Send(command with { UserId = id }, cancellationToken);
+        await mediator.Send(new UpdateUserCommand(id, dto.Email, dto.UserName, dto.Role), cancellationToken);
         return NoContent();
     }
 

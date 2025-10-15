@@ -4,17 +4,6 @@ namespace TaskFlow.Domain.Entities
 {
     public class User
     {
-        public User() { }
-
-        public User(Guid id, string email, string userName, string passwordHash, UserRole role)
-        {
-            Id = id;
-            Email = email;
-            UserName = userName;
-            PasswordHash = passwordHash;
-            Role = role;
-        }
-
         public required Guid Id { get; set; }
         public required string Email { get; set; }
         public required string UserName { get; set; }
