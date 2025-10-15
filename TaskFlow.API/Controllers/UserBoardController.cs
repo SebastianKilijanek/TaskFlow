@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskFlow.Application.UserBoards.Commands;
+using TaskFlow.Application.UserBoards.DTO;
 using TaskFlow.Application.UserBoards.Queries;
 
 namespace TaskFlow.API.Controllers;
@@ -19,9 +20,9 @@ public class UserBoardController(IMediator mediator) : ControllerBase
     }
     
     [HttpPost("{boardId:guid}/users")]
-    public async Task<IActionResult> AddUserToBoard(Guid boardId, [FromBody] AddUserToBoardCommand command, CancellationToken cancellationToken)
+    public async Task<IActionResult> AddUserToBoard(Guid boardId, [FromBody] AddUserToBoardDTO dto, CancellationToken cancellationToken)
     {
-        await mediator.Send(command with { UserId = User.GetUserId(), BoardId = boardId }, cancellationToken);
+        await mediator.Send(new AddUserToBoardCommand(User.GetUserId(), boardId, dto.UserEmail, dto.BoardRole), cancellationToken);
         return NoContent();
     }
 
@@ -33,9 +34,9 @@ public class UserBoardController(IMediator mediator) : ControllerBase
     }
     
     [HttpPut("{boardId:guid}/users/{userIdToChange:guid}")]
-    public async Task<IActionResult> ChangeUserRole(Guid boardId, Guid userIdToChange, [FromBody] ChangeUserBoardRoleCommand command, CancellationToken cancellationToken)
+    public async Task<IActionResult> ChangeUserRole(Guid boardId, Guid userIdToChange, [FromBody] ChangeUserBoardRoleDTO dto, CancellationToken cancellationToken)
     {
-        await mediator.Send(command with { UserId = User.GetUserId(), BoardId = boardId, UserIdToChange = userIdToChange}, cancellationToken);
+        await mediator.Send(new ChangeUserBoardRoleCommand(User.GetUserId(), boardId, userIdToChange, dto.NewRole), cancellationToken);
         return NoContent();
     }
 

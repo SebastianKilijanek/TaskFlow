@@ -46,6 +46,13 @@ public static class TestSeeder
         
         return boardId;
     }
+    
+    public static async Task SeedUserBoard(TestScope scope, Guid userId, Guid boardId, BoardRole role = BoardRole.Editor)
+    {
+        var userBoard = new UserBoard { UserId = userId, BoardId = boardId, BoardRole = role };
+        await scope.UnitOfWork.Repository<UserBoard>().AddAsync(userBoard);
+        await scope.UnitOfWork.SaveChangesAsync();
+    }
 
     public static async Task<Guid> SeedColumn(TestScope scope, Guid boardId, string name = "Test Column", int position = 0)
     {

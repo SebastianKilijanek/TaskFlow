@@ -3,7 +3,6 @@ using TaskFlow.Application.Common.Exceptions;
 using TaskFlow.Application.Common.Interfaces;
 using TaskFlow.Application.UserBoards.Commands;
 using TaskFlow.Domain.Entities;
-using TaskFlow.Domain.Enums;
 using TaskFlow.Domain.Interfaces;
 
 namespace TaskFlow.Application.UserBoards.Handlers;
@@ -13,12 +12,6 @@ public class RemoveUserFromBoardHandler(IUnitOfWork unitOfWork, IEmailService em
 {
     public async Task<Unit> Handle(RemoveUserFromBoardCommand request, CancellationToken cancellationToken)
     {
-        var userBoardRepo = unitOfWork.Repository<UserBoard>();
-
-        var requesterUserBoard = await userBoardRepo.GetByIdAsync(request.UserId, request.BoardId, cancellationToken);
-        if (requesterUserBoard is null || requesterUserBoard.BoardRole != BoardRole.Owner)
-            throw new ForbiddenAccessException("Only the board owner can remove users.");
-
         if (request.UserIdToRemove == request.UserId)
             throw new BadRequestException("An owner cannot remove themselves from the board.");
 
@@ -31,7 +24,7 @@ public class RemoveUserFromBoardHandler(IUnitOfWork unitOfWork, IEmailService em
         var userEmail = userBoardToRemove.User.Email;
         var boardName = userBoardToRemove.Board.Name;
 
-        userBoardRepo.Remove(userBoardToRemove);
+        unitOfWork.Repository<UserBoard>().Remove(userBoardToRemove);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         await emailService.SendAsync(

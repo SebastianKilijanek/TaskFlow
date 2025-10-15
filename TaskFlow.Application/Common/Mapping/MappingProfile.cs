@@ -35,5 +35,8 @@ public class MappingProfile : Profile
         CreateMap<Comment, CommentDTO>()
             .ForMember(dest => dest.AuthorUserName, opt => opt.MapFrom(src => src.Author.UserName));
         CreateMap<CommentDTO, Comment>();
+        
+        CreateMap<UserBoard, UserBoardDTO>();
+        CreateMap<UserBoardDTO, UserBoard>();
     }
 }

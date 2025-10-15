@@ -31,9 +31,8 @@ public class AddUserToBoardHandler(IUnitOfWork unitOfWork, IEmailService emailSe
         if (request.BoardRole == BoardRole.Owner)
             throw new BadRequestException("A board can only have one owner. Please transfer ownership instead.");
 
+        var newUserBoard = new UserBoard { UserId = userToAdd.Id, BoardId = request.BoardId, BoardRole = request.BoardRole };
         
-        var newUserBoard = new UserBoard(userToAdd.Id, request.BoardId, request.BoardRole);
-
         await unitOfWork.Repository<UserBoard>().AddAsync(newUserBoard, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
