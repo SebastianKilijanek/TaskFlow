@@ -22,7 +22,7 @@ public class GetBoardsHandler(IUnitOfWork unitOfWork, IMapper mapper)
         }
 
         var boards = await unitOfWork.Repository<Board>()
-            .ListAsync(b => boardIds.Contains(b.Id), cancellationToken);
+            .ListPagedAsync(b => boardIds.Contains(b.Id), request.Page, request.PageSize, cancellationToken);
 
         return mapper.Map<IReadOnlyList<BoardDTO>>(boards);
     }

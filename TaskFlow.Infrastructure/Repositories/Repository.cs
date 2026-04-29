@@ -28,6 +28,16 @@ public class Repository<T>(DbContext context) : IRepository<T> where T : class
         }
         return await query.ToListAsync(cancellationToken);
     }
+    
+    public virtual async Task<IReadOnlyList<T>> ListPagedAsync(Expression<Func<T, bool>>? predicate = null, int page = 1, int pageSize = 10, CancellationToken cancellationToken = default)
+    {
+        var query = _dbSet.AsQueryable();
+        if (predicate != null)
+        {
+            query = query.Where(predicate);
+        }
+        return await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+    }
         
     public virtual async Task AddAsync(T entity, CancellationToken cancellationToken = default)
     {

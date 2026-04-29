@@ -66,7 +66,7 @@ public class BoardsHandlersTests
 
         _userBoardRepositoryMock.Setup(r => r.ListAsync(It.IsAny<Expression<Func<UserBoard, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(userBoards);
-        _boardRepositoryMock.Setup(r => r.ListAsync(It.IsAny<Expression<Func<Board, bool>>>(), It.IsAny<CancellationToken>()))
+        _boardRepositoryMock.Setup(r => r.ListPagedAsync(It.IsAny<Expression<Func<Board, bool>>>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(boards);
         _mapperMock.Setup(m => m.Map<IReadOnlyList<BoardDTO>>(boards)).Returns(boardDTOs);
 
