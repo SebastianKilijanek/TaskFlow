@@ -27,6 +27,8 @@ public class TestWebApplicationFactory<T> : WebApplicationFactory<T> where T : c
 {
     private readonly string _connectionString;
 
+    protected virtual bool UseTestAuthentication => true;
+
     public TestWebApplicationFactory()
     {
         _connectionString = PostgreSqlFixture.CreateDatabase();
@@ -42,24 +44,20 @@ public class TestWebApplicationFactory<T> : WebApplicationFactory<T> where T : c
             services.AddDbContext<TaskFlowDbContext>(options => {
                 options.UseNpgsql(_connectionString);
             });
-            
-            services.Configure<JwtOptions>(options =>
-            {
-                options.Issuer = "TestIssuer";
-                options.Audience = "TestAudience";
-                options.Secret = "7ee17f31088c745fcf48d8b60d2e26db5a8cca684e19b86e98d8a24081159f63aa4b1b6caea74e26ad6f050e2e6895a76e92fe5315cb4156a77593520a59c501";
-                options.ExpiryMinutes = 60;
-                options.RefreshExpiryMinutes = 43200;
-            });
+
             services.AddScoped<IJwtService, JwtService>();
             services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
-            services.AddAuthentication("Test")
-                .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>("Test", options => { });
-            services.PostConfigure<AuthenticationOptions>(options =>
+
+            if (UseTestAuthentication)
             {
-                options.DefaultAuthenticateScheme = "Test";
-                options.DefaultChallengeScheme = "Test";
-            });
+                services.AddAuthentication("Test")
+                    .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>("Test", options => { });
+                services.PostConfigure<AuthenticationOptions>(options =>
+                {
+                    options.DefaultAuthenticateScheme = "Test";
+                    options.DefaultChallengeScheme = "Test";
+                });
+            }
             
             services.AddScoped<IUnitOfWork, UnitOfWork>();    
             
@@ -125,4 +123,9 @@ public class TestWebApplicationFactory<T> : WebApplicationFactory<T> where T : c
 
         return client;
     }
+}
+
+public class JwtWebApplicationFactory<T> : TestWebApplicationFactory<T> where T : class
+{
+    protected override bool UseTestAuthentication => false;
 }

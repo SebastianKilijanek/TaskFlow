@@ -37,6 +37,9 @@ builder.Services.AddDbContext<TaskFlowDbContext>(options =>
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
 var jwtOptions = jwtSection.Get<JwtOptions>();
+if (jwtOptions is null || string.IsNullOrWhiteSpace(jwtOptions.Secret))
+    throw new InvalidOperationException("Jwt:Secret is not configured.");
+
 builder.Services.Configure<JwtOptions>(jwtSection);
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();

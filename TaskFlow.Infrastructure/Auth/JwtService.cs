@@ -22,6 +22,7 @@ public class JwtService(IOptions<JwtOptions> jwtOptions) : IJwtService
         var claims = new[]
         {
             new Claim(ClaimTypes.Name, user.Email),
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Role, user.Role.ToString()),
             new Claim("UserId", user.Id.ToString())
         };
