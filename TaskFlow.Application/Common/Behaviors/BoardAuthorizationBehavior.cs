@@ -19,12 +19,14 @@ public class BoardAuthorizationBehavior<TRequest, TResponse>(IUnitOfWork unitOfW
 
         request.Board = board;
 
-        if (board.IsPublic)
-            return await next();
-
         var userBoard = await unitOfWork.Repository<UserBoard>().GetByIdAsync(request.UserId, boardId, cancellationToken);
         if (userBoard is null)
+        {
+            if (board.IsPublic && request.AllowPublicAccess)
+                return await next();
+
             throw new ForbiddenAccessException("You are not authorized to access this board.");
+        }
 
         if (requiredRoles != null && requiredRoles.Any() && !requiredRoles.Contains(userBoard.BoardRole))
             throw new ForbiddenAccessException("You do not have the required permissions for this action.");

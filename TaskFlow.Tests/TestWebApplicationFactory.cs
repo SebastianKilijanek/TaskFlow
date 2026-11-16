@@ -98,23 +98,26 @@ public class TestWebApplicationFactory<T> : WebApplicationFactory<T> where T : c
     }
     
     public HttpClient CreateClientWithClaims(params Claim[] claims)
+        => CreateClientForUser(Guid.Parse(TestAuthHandler.UserId), claims);
+
+    public HttpClient CreateClientForUser(Guid userId, params Claim[] extraClaims)
     {
         var client = CreateClient();
         var claimsList = new List<Claim>
         {
             new(ClaimTypes.Name, "Test"),
-            new(ClaimTypes.NameIdentifier, TestAuthHandler.UserId),
+            new(ClaimTypes.NameIdentifier, userId.ToString()),
         };
-        
-        if (claims.Length > 0)
+
+        if (extraClaims.Length > 0)
         {
-            claimsList.AddRange(claims);
+            claimsList.AddRange(extraClaims);
         }
 
         var claimsJson = JsonSerializer.Serialize(claimsList.Select(c => new { c.Type, c.Value }));
         var base64Claims = Convert.ToBase64String(Encoding.UTF8.GetBytes(claimsJson));
         client.DefaultRequestHeaders.Add(TestAuthHandler.TestClaimsHeader, base64Claims);
-        
+
         return client;
     }
 }

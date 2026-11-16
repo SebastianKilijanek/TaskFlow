@@ -13,6 +13,8 @@ public record GetTaskItemsByBoardQuery(Guid UserId, Guid BoardId) : IRequest<IRe
     [JsonIgnore] public User User { get; set; } = null!;
     [JsonIgnore] public Board Board { get; set; } = null!;
     
+    public bool AllowPublicAccess => true;
+
     public Task<(Guid BoardId, IEnumerable<BoardRole> RequiredRoles)> GetAuthorizationDataAsync(IUnitOfWork unitOfWork, CancellationToken cancellationToken = default)
     {
         return Task.FromResult((BoardId, (IEnumerable<BoardRole>)[BoardRole.Owner, BoardRole.Editor, BoardRole.Viewer]));

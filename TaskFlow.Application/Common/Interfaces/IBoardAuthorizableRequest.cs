@@ -8,5 +8,6 @@ public interface IBoardAuthorizableRequest
 {
     Guid UserId { get; }
     Board Board { get; set; }
+    bool AllowPublicAccess => false;
     Task<(Guid BoardId, IEnumerable<BoardRole> RequiredRoles)> GetAuthorizationDataAsync(IUnitOfWork unitOfWork, CancellationToken cancellationToken = default);
 }

@@ -7,5 +7,7 @@ namespace TaskFlow.Application.TaskItems.Queries;
 
 public record GetTaskItemByIdQuery(Guid UserId, Guid Id) : TaskItemRequestBase(UserId, Id), IRequest<TaskItemDTO>
 {
+    public bool AllowPublicAccess => true;
+
     protected override IEnumerable<BoardRole> RequiredRoles => [BoardRole.Owner, BoardRole.Editor, BoardRole.Viewer];
 }
