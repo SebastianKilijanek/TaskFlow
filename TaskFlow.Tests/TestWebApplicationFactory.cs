@@ -25,8 +25,13 @@ public record TestScope(IServiceScope ServiceScope, TaskFlowDbContext DbContext,
 
 public class TestWebApplicationFactory<T> : WebApplicationFactory<T> where T : class
 {
-    private readonly string _dbName = $"TestDb_{Guid.NewGuid()}";
-    
+    private readonly string _connectionString;
+
+    public TestWebApplicationFactory()
+    {
+        _connectionString = PostgreSqlFixture.CreateDatabase();
+    }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.ConfigureServices(services => {
@@ -35,7 +40,7 @@ public class TestWebApplicationFactory<T> : WebApplicationFactory<T> where T : c
             if (descriptor != null) services.Remove(descriptor);
 
             services.AddDbContext<TaskFlowDbContext>(options => {
-                options.UseInMemoryDatabase(_dbName);
+                options.UseNpgsql(_connectionString);
             });
             
             services.Configure<JwtOptions>(options =>
@@ -91,7 +96,7 @@ public class TestWebApplicationFactory<T> : WebApplicationFactory<T> where T : c
         var mapper = serviceScope.ServiceProvider.GetRequiredService<IMapper>();
         var mediator = serviceScope.ServiceProvider.GetRequiredService<IMediator>();
         
-        context.Database.EnsureDeleted();
+        PostgreSqlFixture.DropDatabase(_connectionString);
         context.Database.EnsureCreated();
         
         return new TestScope(serviceScope, context, unitOfWork, mapper, mediator);
