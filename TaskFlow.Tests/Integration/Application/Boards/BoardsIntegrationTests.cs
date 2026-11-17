@@ -52,9 +52,9 @@ public class BoardsIntegrationTests(TestWebApplicationFactory<TaskFlow.API.Assem
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(2, result.Count);
-        Assert.Contains(result, b => b.Id == board1Id);
-        Assert.Contains(result, b => b.Id == board2Id);
+        Assert.Equal(2, result.Items.Count);
+        Assert.Contains(result.Items, b => b.Id == board1Id);
+        Assert.Contains(result.Items, b => b.Id == board2Id);
     }
 
     [Fact]
@@ -70,7 +70,7 @@ public class BoardsIntegrationTests(TestWebApplicationFactory<TaskFlow.API.Assem
 
         // Assert
         Assert.NotNull(result);
-        Assert.Empty(result);
+        Assert.Empty(result.Items);
     }
 
     [Fact]

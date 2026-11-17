@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using TaskFlow.Application.Boards.DTO;
+using TaskFlow.Application.Common;
 using TaskFlow.Domain.Entities;
 using TaskFlow.Domain.Enums;
 using Xunit;
@@ -123,5 +124,55 @@ public class BoardsAPIIntegrationTests(TestWebApplicationFactory<TaskFlow.API.As
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         var deletedBoard = await testScope.UnitOfWork.Repository<Board>().GetByIdAsync(createdBoardId);
         Assert.Null(deletedBoard);
+    }
+
+    [Fact]
+    public async Task GetBoardsV2_PageSize1000_ReturnsPageSize100()
+    {
+        var scope = factory.GetTestScope();
+        await TestSeeder.SeedUser(scope);
+        var client = factory.CreateClientWithClaims();
+
+        var response = await client.GetAsync("/api/v2/boards?pageSize=1000");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<PagedResult<BoardDTO>>();
+        Assert.Equal(100, result!.PageSize);
+    }
+
+    [Fact]
+    public async Task GetBoardsV2_TotalCount_ReturnsAllBoards()
+    {
+        var scope = factory.GetTestScope();
+        await TestSeeder.SeedUser(scope);
+        await TestSeeder.SeedBoard(scope, name: "B1");
+        await TestSeeder.SeedBoard(scope, name: "B2");
+        await TestSeeder.SeedBoard(scope, name: "B3");
+        var client = factory.CreateClientWithClaims();
+
+        var response = await client.GetAsync("/api/v2/boards?pageSize=2");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<PagedResult<BoardDTO>>();
+        Assert.Equal(3, result!.TotalCount);
+        Assert.Equal(2, result.Items.Count);
+    }
+
+    [Fact]
+    public async Task GetBoardsV2_Page0_TreatedAsPage1()
+    {
+        var scope = factory.GetTestScope();
+        await TestSeeder.SeedUser(scope);
+        await TestSeeder.SeedBoard(scope, name: "B1");
+        await TestSeeder.SeedBoard(scope, name: "B2");
+        await TestSeeder.SeedBoard(scope, name: "B3");
+        var client = factory.CreateClientWithClaims();
+
+        var response = await client.GetAsync("/api/v2/boards?page=0&pageSize=2");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<PagedResult<BoardDTO>>();
+        Assert.Equal(1, result!.Page);
+        Assert.Equal(2, result.Items.Count);
     }
 }

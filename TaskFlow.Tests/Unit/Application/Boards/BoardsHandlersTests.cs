@@ -68,7 +68,9 @@ public class BoardsHandlersTests
             .ReturnsAsync(userBoards);
         _boardRepositoryMock.Setup(r => r.ListPagedAsync(It.IsAny<Expression<Func<Board, bool>>>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(boards);
-        _mapperMock.Setup(m => m.Map<IReadOnlyList<BoardDTO>>(boards)).Returns(boardDTOs);
+        _boardRepositoryMock.Setup(r => r.CountAsync(It.IsAny<Expression<Func<Board, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(boards.Count);
+        _mapperMock.Setup(m => m.Map<List<BoardDTO>>(boards)).Returns(boardDTOs);
 
         var handler = new GetBoardsHandler(_unitOfWorkMock.Object, _mapperMock.Object);
         var query = new GetBoardsQuery(TestSeeder.DefaultUserId);
@@ -77,8 +79,8 @@ public class BoardsHandlersTests
         var result = await handler.Handle(query, CancellationToken.None);
 
         // Assert
-        Assert.Equal(2, result.Count);
-        Assert.Contains(result, b => b.Name == "Board 1");
+        Assert.Equal(2, result.Items.Count);
+        Assert.Contains(result.Items, b => b.Name == "Board 1");
     }
 
     [Fact]
@@ -135,5 +137,35 @@ public class BoardsHandlersTests
         // Assert
         _boardRepositoryMock.Verify(r => r.Remove(It.Is<Board>(b => b.Id == boardId)), Times.Once);
         _unitOfWorkMock.Verify(uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetBoardsHandler_Should_ClampPagingAndReturnTotalCount()
+    {
+        var boardId = Guid.NewGuid();
+        var userBoards = new List<UserBoard>
+        {
+            new() { UserId = TestSeeder.DefaultUserId, BoardId = boardId, BoardRole = BoardRole.Owner }
+        };
+        var boards = new List<Board> { new() { Id = boardId, Name = "Board 1" } };
+        var boardDTOs = new List<BoardDTO> { new() { Id = boardId, Name = "Board 1" } };
+
+        _userBoardRepositoryMock.Setup(r => r.ListAsync(It.IsAny<Expression<Func<UserBoard, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(userBoards);
+        _boardRepositoryMock.Setup(r => r.CountAsync(It.IsAny<Expression<Func<Board, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(7);
+        _boardRepositoryMock.Setup(r => r.ListPagedAsync(It.IsAny<Expression<Func<Board, bool>>>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(boards);
+        _mapperMock.Setup(m => m.Map<List<BoardDTO>>(boards)).Returns(boardDTOs);
+
+        var handler = new GetBoardsHandler(_unitOfWorkMock.Object, _mapperMock.Object);
+        var query = new GetBoardsQuery(TestSeeder.DefaultUserId, Page: 0, PageSize: 1000);
+
+        var result = await handler.Handle(query, CancellationToken.None);
+
+        Assert.Equal(1, result.Page);
+        Assert.Equal(100, result.PageSize);
+        Assert.Equal(7, result.TotalCount);
+        _boardRepositoryMock.Verify(r => r.ListPagedAsync(It.IsAny<Expression<Func<Board, bool>>>(), 1, 100, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

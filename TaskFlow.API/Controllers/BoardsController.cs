@@ -20,8 +20,8 @@ public class BoardsController(IMediator mediator) : ControllerBase
     [MapToApiVersion("1")]
     public async Task<IActionResult> GetBoards(CancellationToken cancellationToken)
     {
-        var boards = await mediator.Send(new GetBoardsQuery(User.GetUserId()), cancellationToken);
-        return Ok(boards);
+        var result = await mediator.Send(new GetBoardsQuery(User.GetUserId()), cancellationToken);
+        return Ok(result.Items);
     }
 
     // v2 endpoint with pagination
@@ -29,14 +29,8 @@ public class BoardsController(IMediator mediator) : ControllerBase
     [MapToApiVersion("2")]
     public async Task<IActionResult> GetBoardsV2([FromQuery] int page = 1, [FromQuery] int pageSize = 10, CancellationToken cancellationToken = default)
     {
-        var boards = await mediator.Send(new GetBoardsQuery(User.GetUserId(), page, pageSize), cancellationToken);
-        return Ok(new
-        {
-            Page = page,
-            PageSize = pageSize,
-            TotalCount = boards.Count(),
-            Items = boards
-        });
+        var result = await mediator.Send(new GetBoardsQuery(User.GetUserId(), page, pageSize), cancellationToken);
+        return Ok(result);
     }
 
     [HttpGet("{id:guid}")]
