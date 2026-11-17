@@ -1,6 +1,7 @@
 using System.Text;
 using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -65,10 +66,13 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 builder.Services.AddMediatR(cfg => {
     cfg.RegisterServicesFromAssembly(typeof(TaskFlow.Application.AssemblyReference).Assembly);
+    cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
     cfg.AddOpenBehavior(typeof(UserExistenceCheckBehavior<,>));
     cfg.AddOpenBehavior(typeof(EntityExistenceCheckBehavior<,>));
     cfg.AddOpenBehavior(typeof(BoardAuthorizationBehavior<,>));
 });
+
+builder.Services.AddValidatorsFromAssembly(typeof(TaskFlow.Application.AssemblyReference).Assembly, ServiceLifetime.Scoped, includeInternalTypes: true);
 
 builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>(), typeof(TaskFlow.Application.AssemblyReference).Assembly);
 

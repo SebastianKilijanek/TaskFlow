@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using AutoMapper;
+using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
@@ -63,10 +64,13 @@ public class TestWebApplicationFactory<T> : WebApplicationFactory<T> where T : c
             
             services.AddMediatR(cfg => {
                 cfg.RegisterServicesFromAssembly(typeof(TaskFlow.Application.AssemblyReference).Assembly);
+                cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
                 cfg.AddOpenBehavior(typeof(UserExistenceCheckBehavior<,>));
                 cfg.AddOpenBehavior(typeof(EntityExistenceCheckBehavior<,>));
                 cfg.AddOpenBehavior(typeof(BoardAuthorizationBehavior<,>));
             });
+
+            services.AddValidatorsFromAssembly(typeof(TaskFlow.Application.AssemblyReference).Assembly, ServiceLifetime.Scoped, includeInternalTypes: true);
             
             services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>(), typeof(TaskFlow.Application.AssemblyReference).Assembly);
 
