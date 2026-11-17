@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using TaskFlow.Application.Common.Exceptions;
 
 namespace TaskFlow.API.Middleware;
@@ -40,6 +42,7 @@ public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Exception
             ForbiddenAccessException => StatusCodes.Status403Forbidden,
             NotFoundException => StatusCodes.Status404NotFound,
             ConflictException => StatusCodes.Status409Conflict,
+            DbUpdateException when exception.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation } => StatusCodes.Status409Conflict,
             _ => StatusCodes.Status500InternalServerError
         };
     }

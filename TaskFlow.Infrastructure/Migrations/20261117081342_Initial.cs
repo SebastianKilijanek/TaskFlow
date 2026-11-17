@@ -45,9 +45,8 @@ namespace TaskFlow.Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
-                    Order = table.Column<int>(type: "integer", nullable: false),
-                    BoardId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Position = table.Column<int>(type: "integer", nullable: false)
+                    Position = table.Column<int>(type: "integer", nullable: false),
+                    BoardId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -87,33 +86,33 @@ namespace TaskFlow.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Tasks",
+                name: "TaskItems",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Title = table.Column<string>(type: "text", nullable: false),
                     Description = table.Column<string>(type: "text", nullable: true),
+                    Position = table.Column<int>(type: "integer", nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false),
                     ColumnId = table.Column<Guid>(type: "uuid", nullable: false),
                     AssignedUserId = table.Column<Guid>(type: "uuid", nullable: true),
-                    Status = table.Column<int>(type: "integer", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    DueDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    Position = table.Column<int>(type: "integer", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Tasks", x => x.Id);
+                    table.PrimaryKey("PK_TaskItems", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Tasks_Columns_ColumnId",
+                        name: "FK_TaskItems_Columns_ColumnId",
                         column: x => x.ColumnId,
                         principalTable: "Columns",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Tasks_Users_AssignedUserId",
+                        name: "FK_TaskItems_Users_AssignedUserId",
                         column: x => x.AssignedUserId,
                         principalTable: "Users",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateTable(
@@ -124,16 +123,15 @@ namespace TaskFlow.Infrastructure.Migrations
                     Content = table.Column<string>(type: "text", nullable: false),
                     TaskItemId = table.Column<Guid>(type: "uuid", nullable: false),
                     AuthorId = table.Column<Guid>(type: "uuid", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    Version = table.Column<int>(type: "integer", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Comments", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Comments_Tasks_TaskItemId",
+                        name: "FK_Comments_TaskItems_TaskItemId",
                         column: x => x.TaskItemId,
-                        principalTable: "Tasks",
+                        principalTable: "TaskItems",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
@@ -160,19 +158,25 @@ namespace TaskFlow.Infrastructure.Migrations
                 column: "TaskItemId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Tasks_AssignedUserId",
-                table: "Tasks",
+                name: "IX_TaskItems_AssignedUserId",
+                table: "TaskItems",
                 column: "AssignedUserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Tasks_ColumnId",
-                table: "Tasks",
+                name: "IX_TaskItems_ColumnId",
+                table: "TaskItems",
                 column: "ColumnId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserBoards_BoardId",
                 table: "UserBoards",
                 column: "BoardId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_Email",
+                table: "Users",
+                column: "Email",
+                unique: true);
         }
 
         /// <inheritdoc />
@@ -185,7 +189,7 @@ namespace TaskFlow.Infrastructure.Migrations
                 name: "UserBoards");
 
             migrationBuilder.DropTable(
-                name: "Tasks");
+                name: "TaskItems");
 
             migrationBuilder.DropTable(
                 name: "Columns");

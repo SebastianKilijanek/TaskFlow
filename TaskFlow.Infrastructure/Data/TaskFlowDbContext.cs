@@ -21,6 +21,8 @@ namespace TaskFlow.Infrastructure.Data
         {
             base.OnModelCreating(modelBuilder);
 
+            modelBuilder.Entity<User>().HasIndex(u => u.Email).IsUnique();
+
             // Board - Columns (1:N)
             modelBuilder.Entity<Board>()
                 .HasMany(b => b.Columns)

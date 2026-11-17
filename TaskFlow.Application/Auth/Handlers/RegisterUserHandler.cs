@@ -15,7 +15,8 @@ public class RegisterUserHandler(IUnitOfWork unitOfWork, IJwtService jwtService,
 {
     public async Task<AuthResultDTO> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
     {
-        var existingUser = await unitOfWork.UserRepository.GetByEmailAsync(request.Email, cancellationToken);
+        var email = request.Email.Trim().ToLowerInvariant();
+        var existingUser = await unitOfWork.UserRepository.GetByEmailAsync(email, cancellationToken);
         if (existingUser is not null)
         {
             throw new ConflictException("User with this email already exists.");
@@ -24,7 +25,7 @@ public class RegisterUserHandler(IUnitOfWork unitOfWork, IJwtService jwtService,
         var user = new User
         {
             Id = Guid.NewGuid(),
-            Email = request.Email,
+            Email = email,
             UserName = request.UserName,
             PasswordHash = String.Empty,
             Role = UserRole.User

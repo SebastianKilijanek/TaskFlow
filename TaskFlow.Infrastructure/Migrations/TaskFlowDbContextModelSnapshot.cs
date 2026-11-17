@@ -17,7 +17,10 @@ namespace TaskFlow.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.18")
+                .HasAnnotation("ProductVersion", "8.0.19")
+                .HasAnnotation("Proxies:ChangeTracking", false)
+                .HasAnnotation("Proxies:CheckEquality", false)
+                .HasAnnotation("Proxies:LazyLoading", true)
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -53,9 +56,6 @@ namespace TaskFlow.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("Order")
-                        .HasColumnType("integer");
-
                     b.Property<int>("Position")
                         .HasColumnType("integer");
 
@@ -85,9 +85,6 @@ namespace TaskFlow.Infrastructure.Migrations
                     b.Property<Guid>("TaskItemId")
                         .HasColumnType("uuid");
 
-                    b.Property<int>("Version")
-                        .HasColumnType("integer");
-
                     b.HasKey("Id");
 
                     b.HasIndex("AuthorId");
@@ -115,9 +112,6 @@ namespace TaskFlow.Infrastructure.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
-                    b.Property<DateTime?>("DueDate")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<int>("Position")
                         .HasColumnType("integer");
 
@@ -134,7 +128,7 @@ namespace TaskFlow.Infrastructure.Migrations
 
                     b.HasIndex("ColumnId");
 
-                    b.ToTable("Tasks");
+                    b.ToTable("TaskItems");
                 });
 
             modelBuilder.Entity("TaskFlow.Domain.Entities.User", b =>
@@ -159,6 +153,9 @@ namespace TaskFlow.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
 
                     b.ToTable("Users");
                 });
@@ -218,7 +215,8 @@ namespace TaskFlow.Infrastructure.Migrations
                 {
                     b.HasOne("TaskFlow.Domain.Entities.User", "AssignedUser")
                         .WithMany("AssignedTasks")
-                        .HasForeignKey("AssignedUserId");
+                        .HasForeignKey("AssignedUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("TaskFlow.Domain.Entities.Column", "Column")
                         .WithMany("Tasks")

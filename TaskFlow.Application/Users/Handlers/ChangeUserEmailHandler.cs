@@ -11,14 +11,15 @@ public class ChangeUserEmailHandler(IUnitOfWork unitOfWork) : IRequestHandler<Ch
     public async Task<Unit> Handle(ChangeUserEmailCommand request, CancellationToken cancellationToken)
     {
         var userRepository = unitOfWork.Repository<User>();
+        var newEmail = request.NewEmail.Trim().ToLowerInvariant();
 
-        var existingUserWithEmail = await unitOfWork.UserRepository.GetByEmailAsync(request.NewEmail, cancellationToken);
+        var existingUserWithEmail = await unitOfWork.UserRepository.GetByEmailAsync(newEmail, cancellationToken);
         if (existingUserWithEmail is not null && existingUserWithEmail.Id != request.UserId)
         {
-            throw new ConflictException($"Email {request.NewEmail} is already in use.");
+            throw new ConflictException($"Email {newEmail} is already in use.");
         }
 
-        request.User.Email = request.NewEmail;
+        request.User.Email = newEmail;
         userRepository.Update(request.User);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         
