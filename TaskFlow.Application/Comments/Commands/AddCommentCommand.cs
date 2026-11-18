@@ -8,10 +8,9 @@ using TaskFlow.Domain.Interfaces;
 namespace TaskFlow.Application.Comments.Commands;
 
 public record AddCommentCommand(Guid UserId, Guid TaskItemId, string Content)
-    : IRequest<Guid>, IUserExistenceRequest, IEntityExistenceRequest<TaskItem>, IBoardAuthorizableRequest
+    : IRequest<Guid>, IUserExistenceRequest, ITaskItemExistenceRequest, IBoardAuthorizableRequest
 {
     [JsonIgnore] public User User { get; set; } = null!;
-    [JsonIgnore] public Guid EntityId => TaskItemId;
     [JsonIgnore] public TaskItem Entity { get; set; } = null!;
     [JsonIgnore] public Board Board { get; set; } = null!;
 

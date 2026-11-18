@@ -68,7 +68,10 @@ builder.Services.AddMediatR(cfg => {
     cfg.RegisterServicesFromAssembly(typeof(TaskFlow.Application.AssemblyReference).Assembly);
     cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
     cfg.AddOpenBehavior(typeof(UserExistenceCheckBehavior<,>));
-    cfg.AddOpenBehavior(typeof(EntityExistenceCheckBehavior<,>));
+    cfg.AddOpenBehavior(typeof(ColumnExistenceCheckBehavior<,>));
+    cfg.AddOpenBehavior(typeof(TaskItemExistenceCheckBehavior<,>));
+    cfg.AddOpenBehavior(typeof(CommentExistenceCheckBehavior<,>));
+    cfg.AddOpenBehavior(typeof(UserEntityExistenceCheckBehavior<,>));
     cfg.AddOpenBehavior(typeof(BoardAuthorizationBehavior<,>));
 });
 

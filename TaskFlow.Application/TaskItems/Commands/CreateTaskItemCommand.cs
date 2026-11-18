@@ -8,13 +8,12 @@ using TaskFlow.Domain.Interfaces;
 namespace TaskFlow.Application.TaskItems.Commands;
 
 public record CreateTaskItemCommand(Guid UserId, string Title, string? Description, Guid ColumnId) 
-    : IRequest<Guid>, IUserExistenceRequest, IEntityExistenceRequest<Column>, IBoardAuthorizableRequest
+    : IRequest<Guid>, IUserExistenceRequest, IColumnExistenceRequest, IBoardAuthorizableRequest
 {
     [JsonIgnore] public User User { get; set; } = null!;
-    [JsonIgnore] public Guid EntityId => ColumnId;
     [JsonIgnore] public Column Entity { get; set; } = null!;
     [JsonIgnore] public Board Board { get; set; } = null!;
-    
+
     public Task<(Guid BoardId, IEnumerable<BoardRole> RequiredRoles)> GetAuthorizationDataAsync(IUnitOfWork unitOfWork, CancellationToken cancellationToken = default)
     {
         return Task.FromResult((Entity.BoardId, (IEnumerable<BoardRole>)[BoardRole.Owner, BoardRole.Editor]));

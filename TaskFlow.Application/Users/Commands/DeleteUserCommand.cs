@@ -4,8 +4,8 @@ using TaskFlow.Domain.Entities;
 
 namespace TaskFlow.Application.Users.Commands;
 
-public record DeleteUserCommand(Guid Id) : IRequest<Unit>, IEntityExistenceRequest<User>
+public record DeleteUserCommand(Guid Id) : IRequest<Unit>, IUserEntityRequest
 {
-    public Guid EntityId => Id;
-    public User Entity { get; set; }
+    public User Entity { get; set; } = null!;
+    public Guid UserId => Id;
 }

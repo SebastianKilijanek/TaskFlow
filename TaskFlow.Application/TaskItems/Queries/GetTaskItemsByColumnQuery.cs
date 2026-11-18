@@ -9,13 +9,12 @@ using TaskFlow.Domain.Interfaces;
 namespace TaskFlow.Application.TaskItems.Queries;
 
 public record GetTaskItemsByColumnQuery(Guid UserId, Guid ColumnId) 
-    : IRequest<IReadOnlyList<TaskItemDTO>>, IUserExistenceRequest, IEntityExistenceRequest<Column>, IBoardAuthorizableRequest
+    : IRequest<IReadOnlyList<TaskItemDTO>>, IUserExistenceRequest, IColumnExistenceRequest, IBoardAuthorizableRequest
 {
     [JsonIgnore] public User User { get; set; } = null!;
-    [JsonIgnore] public Guid EntityId => ColumnId;
     [JsonIgnore] public Column Entity { get; set; } = null!;
     [JsonIgnore] public Board Board { get; set; } = null!;
-    
+
     public bool AllowPublicAccess => true;
 
     public Task<(Guid BoardId, IEnumerable<BoardRole> RequiredRoles)> GetAuthorizationDataAsync(IUnitOfWork unitOfWork, CancellationToken cancellationToken = default)

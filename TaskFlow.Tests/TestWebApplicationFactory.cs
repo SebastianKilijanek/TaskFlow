@@ -66,7 +66,10 @@ public class TestWebApplicationFactory<T> : WebApplicationFactory<T> where T : c
                 cfg.RegisterServicesFromAssembly(typeof(TaskFlow.Application.AssemblyReference).Assembly);
                 cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
                 cfg.AddOpenBehavior(typeof(UserExistenceCheckBehavior<,>));
-                cfg.AddOpenBehavior(typeof(EntityExistenceCheckBehavior<,>));
+                cfg.AddOpenBehavior(typeof(ColumnExistenceCheckBehavior<,>));
+                cfg.AddOpenBehavior(typeof(TaskItemExistenceCheckBehavior<,>));
+                cfg.AddOpenBehavior(typeof(CommentExistenceCheckBehavior<,>));
+                cfg.AddOpenBehavior(typeof(UserEntityExistenceCheckBehavior<,>));
                 cfg.AddOpenBehavior(typeof(BoardAuthorizationBehavior<,>));
             });
 

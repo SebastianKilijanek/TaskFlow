@@ -6,13 +6,13 @@ using TaskFlow.Domain.Interfaces;
 
 namespace TaskFlow.Application.TaskItems.Base;
 
-public abstract record TaskItemRequestBase(Guid UserId, Guid Id) : IUserExistenceRequest, IEntityExistenceRequest<TaskItem>, IBoardAuthorizableRequest
+public abstract record TaskItemRequestBase(Guid UserId, Guid Id) : IUserExistenceRequest, ITaskItemExistenceRequest, IBoardAuthorizableRequest
 {
     [JsonIgnore] public User User { get; set; } = null!;
-    [JsonIgnore] public Guid EntityId => Id;
     [JsonIgnore] public TaskItem Entity { get; set; } = null!;
     [JsonIgnore] public Board Board { get; set; } = null!;
-    
+    [JsonIgnore] public Guid TaskItemId => Id;
+
     protected virtual IEnumerable<BoardRole> RequiredRoles => [BoardRole.Owner, BoardRole.Editor];
 
     public Task<(Guid BoardId, IEnumerable<BoardRole> RequiredRoles)> GetAuthorizationDataAsync(IUnitOfWork unitOfWork, CancellationToken cancellationToken = default)

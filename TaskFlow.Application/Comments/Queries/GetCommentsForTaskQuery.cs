@@ -9,10 +9,9 @@ using TaskFlow.Domain.Interfaces;
 namespace TaskFlow.Application.Comments.Queries;
 
 public record GetCommentsForTaskQuery(Guid UserId, Guid TaskItemId)
-    : IRequest<IReadOnlyList<CommentDTO>>, IUserExistenceRequest, IEntityExistenceRequest<TaskItem>, IBoardAuthorizableRequest
+    : IRequest<IReadOnlyList<CommentDTO>>, IUserExistenceRequest, ITaskItemExistenceRequest, IBoardAuthorizableRequest
 {
     [JsonIgnore] public User User { get; set; } = null!;
-    [JsonIgnore] public Guid EntityId => TaskItemId;
     [JsonIgnore] public TaskItem Entity { get; set; } = null!;
     [JsonIgnore] public Board Board { get; set; } = null!;
 
