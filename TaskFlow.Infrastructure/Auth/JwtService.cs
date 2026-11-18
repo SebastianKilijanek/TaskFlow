@@ -17,6 +17,8 @@ public class JwtService(IOptions<JwtOptions> jwtOptions) : IJwtService
     private readonly int _jwtExpiryMinutes = jwtOptions.Value.ExpiryMinutes ?? throw new ArgumentException("Jwt:ExpireMinutes");
     private readonly int _refreshExpiryMinutes = jwtOptions.Value.RefreshExpiryMinutes ?? throw new ArgumentException("Jwt:RefreshExpireMinutes");
 
+    public DateTime RefreshTokenExpiresAt => DateTime.UtcNow.AddMinutes(_refreshExpiryMinutes);
+
     public (string AccessToken, string RefreshToken) GenerateTokens(User user)
     {
         var claims = new[]

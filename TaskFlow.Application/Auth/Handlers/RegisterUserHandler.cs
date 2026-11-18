@@ -4,6 +4,7 @@ using TaskFlow.Application.Auth.DTO;
 using TaskFlow.Domain.Entities;
 using TaskFlow.Domain.Interfaces;
 using Microsoft.AspNetCore.Identity;
+using TaskFlow.Application.Common;
 using TaskFlow.Application.Common.Exceptions;
 using TaskFlow.Application.Common.Interfaces;
 using TaskFlow.Domain.Enums;
@@ -33,9 +34,12 @@ public class RegisterUserHandler(IUnitOfWork unitOfWork, IJwtService jwtService,
         
         user.PasswordHash = passwordHasher.HashPassword(user, request.Password);
         await unitOfWork.Repository<User>().AddAsync(user, cancellationToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         var tokens = jwtService.GenerateTokens(user);
+        await unitOfWork.RefreshTokenRepository.AddAsync(
+            RefreshTokenFactory.Create(user.Id, tokens.RefreshToken, jwtService.RefreshTokenExpiresAt), cancellationToken);
+
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return new AuthResultDTO(tokens.AccessToken, tokens.RefreshToken, user.UserName, user.Email, user.Role.ToString());
     }

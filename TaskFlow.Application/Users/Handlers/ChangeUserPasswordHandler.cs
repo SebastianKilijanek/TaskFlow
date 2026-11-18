@@ -22,6 +22,18 @@ public class ChangeUserPasswordHandler(IUnitOfWork unitOfWork, IPasswordHasher<U
 
         request.User.PasswordHash = passwordHasher.HashPassword(request.User, request.NewPassword);
         userRepository.Update(request.User);
+
+        var refreshTokens = await unitOfWork.RefreshTokenRepository
+            .ListAsync(r => r.UserId == request.UserId, cancellationToken);
+        foreach (var token in refreshTokens)
+        {
+            if (token.RevokedAt is null)
+            {
+                token.RevokedAt = DateTime.UtcNow;
+                unitOfWork.RefreshTokenRepository.Update(token);
+            }
+        }
+
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;

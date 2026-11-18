@@ -3,6 +3,7 @@ namespace TaskFlow.Domain.Interfaces;
 public interface IUnitOfWork
 {
     IUserRepository UserRepository { get; }
+    IRefreshTokenRepository RefreshTokenRepository { get; }
     IRepository<T> Repository<T>() where T : class;
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

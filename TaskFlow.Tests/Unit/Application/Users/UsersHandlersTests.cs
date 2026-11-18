@@ -1,6 +1,7 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using Moq;
+using System.Linq.Expressions;
 using TaskFlow.Application.Common.Exceptions;
 using TaskFlow.Application.Users.Commands;
 using TaskFlow.Application.Users.DTO;
@@ -20,11 +21,15 @@ public class UsersHandlersTests
     private readonly Mock<IUserRepository> _domainUserRepositoryMock = new();
     private readonly Mock<IMapper> _mapperMock = new();
     private readonly Mock<IPasswordHasher<User>> _passwordHasherMock = new();
+    private readonly Mock<IRefreshTokenRepository> _refreshTokenRepositoryMock = new();
 
     public UsersHandlersTests()
     {
         _unitOfWorkMock.Setup(u => u.Repository<User>()).Returns(_userRepositoryMock.Object);
         _unitOfWorkMock.Setup(u => u.UserRepository).Returns(_domainUserRepositoryMock.Object);
+        _unitOfWorkMock.Setup(u => u.RefreshTokenRepository).Returns(_refreshTokenRepositoryMock.Object);
+        _refreshTokenRepositoryMock.Setup(r => r.ListAsync(It.IsAny<Expression<Func<RefreshToken, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<RefreshToken>());
     }
 
     [Fact]

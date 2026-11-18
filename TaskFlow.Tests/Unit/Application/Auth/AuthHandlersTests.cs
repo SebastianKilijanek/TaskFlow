@@ -6,6 +6,7 @@ using TaskFlow.Domain.Interfaces;
 using TaskFlow.Application.Auth.Commands;
 using TaskFlow.Application.Auth.Handlers;
 using Microsoft.AspNetCore.Identity;
+using TaskFlow.Application.Common;
 using TaskFlow.Application.Common.Exceptions;
 using TaskFlow.Application.Common.Interfaces;
 using TaskFlow.Domain.Enums;
@@ -18,6 +19,14 @@ public class AuthHandlersTests
     private readonly Mock<IJwtService> _jwtServiceMock = new();
     private readonly Mock<IPasswordHasher<User>> _passwordHasherMock = new();
     private readonly Mock<IRepository<User>> _userRepositoryMock = new();
+    private readonly Mock<IRefreshTokenRepository> _refreshTokenRepositoryMock = new();
+
+    public AuthHandlersTests()
+    {
+        _unitOfWorkMock.Setup(u => u.RefreshTokenRepository).Returns(_refreshTokenRepositoryMock.Object);
+        _refreshTokenRepositoryMock.Setup(r => r.AddAsync(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+    }
 
     [Fact]
     public async Task RegisterUserHandler_Should_CreateUserAndReturnTokens()
@@ -133,8 +142,17 @@ public class AuthHandlersTests
         var identity = new ClaimsIdentity(claims);
         var principal = new ClaimsPrincipal(identity);
 
-        _jwtServiceMock.Setup(s => s.GetPrincipalFromToken("valid-refresh-token", true)).Returns(principal);
-        _unitOfWorkMock.Setup(uow => uow.UserRepository.GetByEmailAsync(user.Email, It.IsAny<CancellationToken>()))
+        _jwtServiceMock.Setup(s => s.GetPrincipalFromToken("valid-refresh-token", false)).Returns(principal);
+        _jwtServiceMock.Setup(s => s.RefreshTokenExpiresAt).Returns(DateTime.UtcNow.AddDays(30));
+        var stored = new RefreshToken
+        {
+            Id = RefreshTokenHasher.Hash("valid-refresh-token"),
+            UserId = user.Id,
+            ExpiresAt = DateTime.UtcNow.AddDays(30),
+        };
+        _refreshTokenRepositoryMock.Setup(r => r.GetByHashAsync(stored.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(stored);
+        _unitOfWorkMock.Setup(uow => uow.UserRepository.GetByIdAsync(user.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
         _jwtServiceMock.Setup(s => s.GenerateTokens(user))
             .Returns(("new-access-token", "new-refresh-token"));
@@ -155,7 +173,7 @@ public class AuthHandlersTests
     public async Task RefreshTokenHandler_Should_ThrowUnauthorizedAccessException_ForInvalidRefreshToken()
     {
         // Arrange
-        _jwtServiceMock.Setup(s => s.GetPrincipalFromToken("invalid-token", true))
+        _jwtServiceMock.Setup(s => s.GetPrincipalFromToken("invalid-token", false))
             .Returns((ClaimsPrincipal)null!);
 
         var handler = new RefreshTokenHandler(_unitOfWorkMock.Object, _jwtServiceMock.Object);

@@ -8,6 +8,7 @@ namespace TaskFlow.Infrastructure.Repositories
         private readonly Dictionary<Type, object> _repositories = new();
        
         public IUserRepository UserRepository { get; } = new UserRepository(context);
+        public IRefreshTokenRepository RefreshTokenRepository { get; } = new RefreshTokenRepository(context);
         
         public IRepository<T> Repository<T>() where T : class
         {

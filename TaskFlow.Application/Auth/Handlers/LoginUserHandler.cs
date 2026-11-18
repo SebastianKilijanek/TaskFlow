@@ -4,6 +4,7 @@ using TaskFlow.Application.Auth.DTO;
 using TaskFlow.Domain.Entities;
 using TaskFlow.Domain.Interfaces;
 using Microsoft.AspNetCore.Identity;
+using TaskFlow.Application.Common;
 using TaskFlow.Application.Common.Interfaces;
 
 namespace TaskFlow.Application.Auth.Handlers;
@@ -22,6 +23,9 @@ public class LoginUserHandler(IUnitOfWork unitOfWork, IJwtService jwtService, IP
             throw new UnauthorizedAccessException("Invalid email or password.");
 
         var tokens = jwtService.GenerateTokens(user);
+        await unitOfWork.RefreshTokenRepository.AddAsync(
+            RefreshTokenFactory.Create(user.Id, tokens.RefreshToken, jwtService.RefreshTokenExpiresAt), cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return new AuthResultDTO(tokens.AccessToken, tokens.RefreshToken, user.UserName, user.Email, user.Role.ToString());
     }
