@@ -94,6 +94,9 @@ builder.Services.AddApiVersioning(options =>
     options.SubstituteApiVersionInUrl = true;
 });
 
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<ExceptionToProblemDetailsHandler>();
+
 builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
@@ -174,7 +177,7 @@ if (app.Environment.IsDevelopment())
 
 // app.UseHttpsRedirection();
 
-app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseExceptionHandler();
 
 app.UseAuthentication();
 app.UseAuthorization();
