@@ -157,7 +157,7 @@ public class UserBoardHandlersTests
             new() { UserId = userBoards[1].UserId, BoardId = boardId, BoardRole = "Editor", JoinedAt = DateTime.UtcNow }
         };
 
-        _userBoardRepositoryMock.Setup(r => r.ListAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<UserBoard, bool>>>(), It.IsAny<CancellationToken>()))
+        _userBoardRepositoryMock.Setup(r => r.ListReadOnlyAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<UserBoard, bool>>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(userBoards);
         _mapperMock.Setup(m => m.Map<IReadOnlyList<UserBoardDTO>>(userBoards)).Returns(userBoardDTOs);
 

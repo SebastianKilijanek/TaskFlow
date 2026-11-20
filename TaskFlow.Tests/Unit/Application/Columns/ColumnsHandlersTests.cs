@@ -112,7 +112,7 @@ public class ColumnsHandlersTests
             new() { Id = columns[1].Id, Name = "Column 2", Position = 1, BoardId = boardId }
         };
 
-        _columnRepositoryMock.Setup(r => r.ListAsync(It.IsAny<Expression<Func<Column, bool>>>(),
+        _columnRepositoryMock.Setup(r => r.ListReadOnlyAsync(It.IsAny<Expression<Func<Column, bool>>>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(columns);
     

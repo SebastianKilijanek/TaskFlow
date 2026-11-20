@@ -39,7 +39,7 @@ public class UsersHandlersTests
         var users = new List<User> { new() { Id = Guid.NewGuid(), Email = "test@test.com", UserName = "Tester", PasswordHash = "hash" } };
         var userDtos = new List<UserDTO> { new() { Id = users[0].Id, Email = users[0].Email, UserName = users[0].UserName, Role = UserRole.User } };
 
-        _userRepositoryMock.Setup(r => r.ListAsync(null, It.IsAny<CancellationToken>())).ReturnsAsync(users);
+        _userRepositoryMock.Setup(r => r.ListReadOnlyAsync(null, It.IsAny<CancellationToken>())).ReturnsAsync(users);
         _mapperMock.Setup(m => m.Map<IReadOnlyList<UserDTO>>(users)).Returns(userDtos);
 
         var handler = new GetUsersHandler(_unitOfWorkMock.Object, _mapperMock.Object);

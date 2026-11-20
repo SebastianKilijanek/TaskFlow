@@ -18,7 +18,7 @@ public class GetBoardsHandler(IUnitOfWork unitOfWork, IMapper mapper)
         var pageSize = Math.Clamp(request.PageSize, 1, 100);
 
         var userBoards = await unitOfWork.Repository<UserBoard>()
-            .ListAsync(ub => ub.UserId == request.UserId, cancellationToken);
+            .ListReadOnlyAsync(ub => ub.UserId == request.UserId, cancellationToken);
         var boardIds = userBoards.Select(ub => ub.BoardId).ToList();
 
         if (boardIds.Count == 0)
@@ -27,7 +27,7 @@ public class GetBoardsHandler(IUnitOfWork unitOfWork, IMapper mapper)
         Expression<Func<Board, bool>> predicate = b => boardIds.Contains(b.Id);
 
         var totalCount = await unitOfWork.Repository<Board>().CountAsync(predicate, cancellationToken);
-        var boards = await unitOfWork.Repository<Board>().ListPagedAsync(predicate, page, pageSize, cancellationToken);
+        var boards = await unitOfWork.Repository<Board>().ListPagedReadOnlyAsync(predicate, page, pageSize, cancellationToken);
 
         return new PagedResult<BoardDTO>(mapper.Map<List<BoardDTO>>(boards), page, pageSize, totalCount);
     }

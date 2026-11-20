@@ -207,7 +207,7 @@ public class TaskItemsHandlersTests
             new() { Id = taskItems[1].Id, Title = "Task 2", ColumnId = columnId, Position = 1 }
         };
 
-        _taskItemRepositoryMock.Setup(r => r.ListAsync(
+        _taskItemRepositoryMock.Setup(r => r.ListReadOnlyAsync(
                 It.IsAny<Expression<Func<TaskItem, bool>>>(), It.IsAny<CancellationToken>()))
                         .ReturnsAsync((Expression<Func<TaskItem, bool>> predicate, CancellationToken token) =>
                         {

@@ -11,7 +11,7 @@ public class GetUsersHandler(IUnitOfWork unitOfWork, IMapper mapper) : IRequestH
 {
     public async Task<IReadOnlyList<UserDTO>> Handle(GetUsersQuery request, CancellationToken cancellationToken)
     {
-        var users = await unitOfWork.Repository<User>().ListAsync(cancellationToken: cancellationToken);
+        var users = await unitOfWork.Repository<User>().ListReadOnlyAsync(cancellationToken: cancellationToken);
         return mapper.Map<IReadOnlyList<UserDTO>>(users);
     }
 }

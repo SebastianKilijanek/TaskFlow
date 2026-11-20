@@ -133,7 +133,7 @@ public class CommentsHandlersTests
             }
         }.AsReadOnly();
 
-        _unitOfWorkMock.Setup(u => u.Repository<Comment>().ListAsync(It.IsAny<Expression<Func<Comment, bool>>>(), 
+        _unitOfWorkMock.Setup(u => u.Repository<Comment>().ListReadOnlyAsync(It.IsAny<Expression<Func<Comment, bool>>>(), 
                     It.IsAny<CancellationToken>())).ReturnsAsync(comments);
         _mapperMock.Setup(m => m.Map<IReadOnlyList<CommentDTO>>(comments)).Returns(commentDTOs);
 
