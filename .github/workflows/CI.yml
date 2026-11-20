@@ -18,6 +18,10 @@ jobs:
           dotnet-version: 8.0.x
       - name: Restore dependencies
         run: dotnet restore
+      - name: Audit vulnerable packages
+        run: |
+          dotnet list package --vulnerable --include-transitive | tee vuln.txt
+          ! grep -qE "Critical|High" vuln.txt
       - name: Build
         run: dotnet build --no-restore --configuration Release
       - name: Test
