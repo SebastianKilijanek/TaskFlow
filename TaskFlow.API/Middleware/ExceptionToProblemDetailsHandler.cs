@@ -75,6 +75,8 @@ public class ExceptionToProblemDetailsHandler(ILogger<ExceptionToProblemDetailsH
                 => (StatusCodes.Status404NotFound, "Not found"),
             ConflictException
                 => (StatusCodes.Status409Conflict, "Conflict"),
+            DbUpdateConcurrencyException
+                => (StatusCodes.Status409Conflict, "Conflict"),
             DbUpdateException when exception.InnerException is PostgresException
             {
                 SqlState: PostgresErrorCodes.UniqueViolation
