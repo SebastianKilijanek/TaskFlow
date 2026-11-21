@@ -1,13 +1,14 @@
 using MediatR;
 using TaskFlow.Application.Common.Exceptions;
 using TaskFlow.Application.Common.Interfaces;
+using TaskFlow.Application.Common.Outbox;
 using TaskFlow.Application.UserBoards.Commands;
 using TaskFlow.Domain.Entities;
 using TaskFlow.Domain.Interfaces;
 
 namespace TaskFlow.Application.UserBoards.Handlers;
 
-public class RemoveUserFromBoardHandler(IUnitOfWork unitOfWork, IEmailService emailService)
+public class RemoveUserFromBoardHandler(IUnitOfWork unitOfWork, IOutbox outbox)
     : IRequestHandler<RemoveUserFromBoardCommand, Unit>
 {
     public async Task<Unit> Handle(RemoveUserFromBoardCommand request, CancellationToken cancellationToken)
@@ -25,13 +26,13 @@ public class RemoveUserFromBoardHandler(IUnitOfWork unitOfWork, IEmailService em
         var boardName = userBoardToRemove.Board.Name;
 
         unitOfWork.Repository<UserBoard>().Remove(userBoardToRemove);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        await emailService.SendAsync(
+        outbox.Add("email", new OutboxEmail(
             userEmail,
             "TaskFlow: Removed from Board",
-            $"You have been removed from the board '{boardName}'."
-        );
+            $"You have been removed from the board '{boardName}'."));
+
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

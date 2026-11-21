@@ -18,6 +18,7 @@ using TaskFlow.Domain.Entities;
 using TaskFlow.Domain.Interfaces;
 using TaskFlow.Infrastructure.Auth;
 using TaskFlow.Infrastructure.Data;
+using TaskFlow.Infrastructure.Outbox;
 using TaskFlow.Infrastructure.Repositories;
 
 namespace TaskFlow.Tests;
@@ -87,6 +88,7 @@ public class TestWebApplicationFactory<T> : WebApplicationFactory<T> where T : c
                 options.EnableSsl = true;
             });
             services.AddScoped<IEmailService, TestEmailService>();
+            services.AddScoped<IOutbox, OutboxWriter>();
             
             services.AddControllers();
         });

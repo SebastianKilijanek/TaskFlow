@@ -17,7 +17,7 @@ public class UserBoardHandlersTests
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<IRepository<UserBoard>> _userBoardRepositoryMock = new();
     private readonly Mock<IUserRepository> _userRepositoryMock = new();
-    private readonly Mock<IEmailService> _emailServiceMock = new();
+    private readonly Mock<IOutbox> _outboxMock = new();
     private readonly Mock<IMapper> _mapperMock = new();
 
     public UserBoardHandlersTests()
@@ -40,7 +40,7 @@ public class UserBoardHandlersTests
         _userRepositoryMock.Setup(r => r.GetByEmailAsync(userToAdd.Email, It.IsAny<CancellationToken>()))
             .ReturnsAsync(userToAdd);
 
-        var handler = new AddUserToBoardHandler(_unitOfWorkMock.Object, _emailServiceMock.Object);
+        var handler = new AddUserToBoardHandler(_unitOfWorkMock.Object, _outboxMock.Object);
         var command = new AddUserToBoardCommand(TestSeeder.DefaultUserId, boardId, userToAdd.Email, BoardRole.Editor) { Board = board };
 
         // Act
@@ -53,7 +53,7 @@ public class UserBoardHandlersTests
             ub.BoardRole == BoardRole.Editor
         ), It.IsAny<CancellationToken>()), Times.Once);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-        _emailServiceMock.Verify(s => s.SendAsync(userToAdd.Email, It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+        _outboxMock.Verify(o => o.Add("email", It.IsAny<object>()), Times.Once);
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public class UserBoardHandlersTests
         _userBoardRepositoryMock.Setup(r => r.GetByIdAsync(userIdToRemove, boardId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(userBoardToRemove);
 
-        var handler = new RemoveUserFromBoardHandler(_unitOfWorkMock.Object, _emailServiceMock.Object);
+        var handler = new RemoveUserFromBoardHandler(_unitOfWorkMock.Object, _outboxMock.Object);
         var command = new RemoveUserFromBoardCommand(TestSeeder.DefaultUserId, boardId, userIdToRemove);
 
         // Act
@@ -81,7 +81,7 @@ public class UserBoardHandlersTests
         // Assert
         _userBoardRepositoryMock.Verify(r => r.Remove(userBoardToRemove), Times.Once);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-        _emailServiceMock.Verify(s => s.SendAsync(userToRemove.Email, It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+        _outboxMock.Verify(o => o.Add("email", It.IsAny<object>()), Times.Once);
     }
 
     [Fact]
@@ -97,7 +97,7 @@ public class UserBoardHandlersTests
         _userBoardRepositoryMock.Setup(r => r.GetByIdAsync(userIdToChange, boardId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(userBoardToChange);
 
-        var handler = new ChangeUserBoardRoleHandler(_unitOfWorkMock.Object, _emailServiceMock.Object);
+        var handler = new ChangeUserBoardRoleHandler(_unitOfWorkMock.Object, _outboxMock.Object);
         var command = new ChangeUserBoardRoleCommand(TestSeeder.DefaultUserId, boardId, userIdToChange, BoardRole.Editor);
 
         // Act
@@ -107,7 +107,7 @@ public class UserBoardHandlersTests
         Assert.Equal(BoardRole.Editor, userBoardToChange.BoardRole);
         _userBoardRepositoryMock.Verify(r => r.Update(userBoardToChange), Times.Once);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-        _emailServiceMock.Verify(s => s.SendAsync(userToChange.Email, It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+        _outboxMock.Verify(o => o.Add("email", It.IsAny<object>()), Times.Once);
     }
 
     [Fact]
@@ -126,7 +126,7 @@ public class UserBoardHandlersTests
         _userBoardRepositoryMock.Setup(r => r.GetByIdAsync(newOwnerId, boardId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(newOwnerUserBoard);
 
-        var handler = new TransferBoardOwnershipHandler(_unitOfWorkMock.Object, _emailServiceMock.Object);
+        var handler = new TransferBoardOwnershipHandler(_unitOfWorkMock.Object, _outboxMock.Object);
         var command = new TransferBoardOwnershipCommand(TestSeeder.DefaultUserId, boardId, newOwnerId);
 
         // Act
@@ -138,7 +138,7 @@ public class UserBoardHandlersTests
         _userBoardRepositoryMock.Verify(r => r.Update(currentOwnerUserBoard), Times.Once);
         _userBoardRepositoryMock.Verify(r => r.Update(newOwnerUserBoard), Times.Once);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-        _emailServiceMock.Verify(s => s.SendAsync(newOwner.Email, It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+        _outboxMock.Verify(o => o.Add("email", It.IsAny<object>()), Times.Once);
     }
 
     [Fact]

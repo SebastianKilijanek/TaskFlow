@@ -19,6 +19,7 @@ using TaskFlow.Domain.Entities;
 using TaskFlow.Domain.Interfaces;
 using TaskFlow.Infrastructure.Auth;
 using TaskFlow.Infrastructure.Data;
+using TaskFlow.Infrastructure.Outbox;
 using TaskFlow.Infrastructure.Repositories;
 using TaskFlow.Infrastructure.Services;
 
@@ -81,6 +82,7 @@ builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>(), typeof(T
 
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("EmailOptions"));
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IOutbox, OutboxWriter>();
 
 builder.Services.AddApiVersioning(options =>
 {

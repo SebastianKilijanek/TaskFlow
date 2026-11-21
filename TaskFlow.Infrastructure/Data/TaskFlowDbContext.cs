@@ -12,6 +12,7 @@ namespace TaskFlow.Infrastructure.Data
         public DbSet<TaskItem> TaskItems { get; set; }
         public DbSet<Comment> Comments { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<OutboxMessage> OutboxMessages { get; set; }
         
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -23,7 +24,7 @@ namespace TaskFlow.Infrastructure.Data
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<User>().HasIndex(u => u.Email).IsUnique();
-            modelBuilder.Entity<TaskItem>().UseXminAsConcurrencyToken();
+            modelBuilder.Entity<TaskItem>().Property<uint>("Version").IsRowVersion();
 
             // Board - Columns (1:N)
             modelBuilder.Entity<Board>()
@@ -86,6 +87,12 @@ namespace TaskFlow.Infrastructure.Data
                     .WithMany()
                     .HasForeignKey(r => r.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<OutboxMessage>(entity =>
+            {
+                entity.HasKey(m => m.Id);
+                entity.HasIndex(m => m.Status);
             });
         }
     }

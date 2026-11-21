@@ -1,6 +1,7 @@
 using MediatR;
 using TaskFlow.Application.Common.Exceptions;
 using TaskFlow.Application.Common.Interfaces;
+using TaskFlow.Application.Common.Outbox;
 using TaskFlow.Application.UserBoards.Commands;
 using TaskFlow.Domain.Entities;
 using TaskFlow.Domain.Enums;
@@ -8,7 +9,7 @@ using TaskFlow.Domain.Interfaces;
 
 namespace TaskFlow.Application.UserBoards.Handlers;
 
-public class TransferBoardOwnershipHandler(IUnitOfWork unitOfWork, IEmailService emailService)
+public class TransferBoardOwnershipHandler(IUnitOfWork unitOfWork, IOutbox outbox)
     : IRequestHandler<TransferBoardOwnershipCommand, Unit>
 {
     public async Task<Unit> Handle(TransferBoardOwnershipCommand request, CancellationToken cancellationToken)
@@ -29,16 +30,16 @@ public class TransferBoardOwnershipHandler(IUnitOfWork unitOfWork, IEmailService
 
         userBoardRepository.Update(currentOwnerUserBoard);
         userBoardRepository.Update(newOwnerUserBoard);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         var newOwnerEmail = newOwnerUserBoard.User.Email;
         var boardName = newOwnerUserBoard.Board.Name;
 
-        await emailService.SendAsync(
+        outbox.Add("email", new OutboxEmail(
             newOwnerEmail,
             "TaskFlow: Board Ownership Transferred",
-            $"You are now the owner of the board '{boardName}'."
-        );
+            $"You are now the owner of the board '{boardName}'."));
+
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

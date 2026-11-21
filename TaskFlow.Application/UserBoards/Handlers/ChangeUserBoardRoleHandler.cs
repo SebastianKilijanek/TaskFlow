@@ -1,6 +1,7 @@
 using MediatR;
 using TaskFlow.Application.Common.Exceptions;
 using TaskFlow.Application.Common.Interfaces;
+using TaskFlow.Application.Common.Outbox;
 using TaskFlow.Application.UserBoards.Commands;
 using TaskFlow.Domain.Entities;
 using TaskFlow.Domain.Enums;
@@ -8,7 +9,7 @@ using TaskFlow.Domain.Interfaces;
 
 namespace TaskFlow.Application.UserBoards.Handlers;
 
-public class ChangeUserBoardRoleHandler(IUnitOfWork unitOfWork, IEmailService emailService) 
+public class ChangeUserBoardRoleHandler(IUnitOfWork unitOfWork, IOutbox outbox)
     : IRequestHandler<ChangeUserBoardRoleCommand, Unit>
 {
     public async Task<Unit> Handle(ChangeUserBoardRoleCommand request, CancellationToken cancellationToken)
@@ -27,16 +28,16 @@ public class ChangeUserBoardRoleHandler(IUnitOfWork unitOfWork, IEmailService em
 
         userBoardToChange.BoardRole = request.NewRole;
         unitOfWork.Repository<UserBoard>().Update(userBoardToChange);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         var userEmail = userBoardToChange.User.Email;
         var boardName = userBoardToChange.Board.Name;
 
-        await emailService.SendAsync(
+        outbox.Add("email", new OutboxEmail(
             userEmail,
             "TaskFlow: Your Role Has Changed",
-            $"Your role on the board '{boardName}' has been changed to {request.NewRole}."
-        );
+            $"Your role on the board '{boardName}' has been changed to {request.NewRole}."));
+
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }
